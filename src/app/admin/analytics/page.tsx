@@ -20,12 +20,39 @@ interface Jersey {
   }>;
 }
 
-interface Seller {
+interface OrderItem {
   id: string;
-  email: string;
-  user_metadata?: {
-    full_name?: string;
-  };
+  jersey_id: string;
+  price: number;
+  quantity: number;
+  product_title?: string;
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  order_items: OrderItem[];
+}
+
+interface TopProduct {
+  name: string;
+  sales: number;
+  revenue: number;
+  seller: string;
+}
+
+interface TopSeller {
+  name: string;
+  sales: number;
+  orders: number;
+  products: number;
+}
+
+interface SellerPerformance {
+  seller: string;
+  growth: number;
+  orders: number;
+  revenue: number;
 }
 
 interface AnalyticsData {
@@ -37,9 +64,9 @@ interface AnalyticsData {
   thisMonthSales: number;
   weeklyData: Array<{ week: string; sales: number }>;
   monthlyData: Array<{ month: string; sales: number }>;
-  topProducts: Array<{ name: string; sales: number; revenue: number; seller: string }>;
-  topSellers: Array<{ name: string; sales: number; orders: number; products: number }>;
-  sellerPerformance: Array<{ seller: string; growth: number; orders: number; revenue: number }>;
+  topProducts: TopProduct[];
+  topSellers: TopSeller[];
+  sellerPerformance: SellerPerformance[];
 }
 
 export default function AdminAnalytics() {
@@ -118,8 +145,8 @@ export default function AdminAnalytics() {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       // Calculate total sales from orders
-      const totalSales = orders ? orders.reduce((sum: number, order: any) => {
-        const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+      const totalSales = orders ? orders.reduce((sum: number, order: Order) => {
+        const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
           itemSum + (item.price * item.quantity), 0) || 0;
         return sum + orderTotal;
       }, 0) : 0;
@@ -129,18 +156,18 @@ export default function AdminAnalytics() {
 
       // Calculate this week's sales from orders
       const thisWeekSales = orders ? orders
-        .filter((order: any) => new Date(order.created_at) >= weekAgo)
-        .reduce((sum: number, order: any) => {
-          const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+        .filter((order: Order) => new Date(order.created_at) >= weekAgo)
+        .reduce((sum: number, order: Order) => {
+          const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
             itemSum + (item.price * item.quantity), 0) || 0;
           return sum + orderTotal;
         }, 0) : 0;
 
       // Calculate this month's sales from orders
       const thisMonthSales = orders ? orders
-        .filter((order: any) => new Date(order.created_at) >= monthAgo)
-        .reduce((sum: number, order: any) => {
-          const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+        .filter((order: Order) => new Date(order.created_at) >= monthAgo)
+        .reduce((sum: number, order: Order) => {
+          const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
             itemSum + (item.price * item.quantity), 0) || 0;
           return sum + orderTotal;
         }, 0) : 0;
@@ -163,12 +190,12 @@ export default function AdminAnalytics() {
         const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
         
         const weekSales = orders ? orders
-          .filter((order: any) => {
+          .filter((order: Order) => {
             const created = new Date(order.created_at);
             return created >= weekStart && created < weekEnd;
           })
-          .reduce((sum: number, order: any) => {
-            const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+          .reduce((sum: number, order: Order) => {
+            const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
               itemSum + (item.price * item.quantity), 0) || 0;
             return sum + orderTotal;
           }, 0) : 0;
@@ -186,12 +213,12 @@ export default function AdminAnalytics() {
         const monthEnd = new Date(now.getFullYear(), monthStart.getMonth() + 1, 0);
         
         const monthSales = orders ? orders
-          .filter((order: any) => {
+          .filter((order: Order) => {
             const created = new Date(order.created_at);
             return created >= monthStart && created <= monthEnd;
           })
-          .reduce((sum: number, order: any) => {
-            const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+          .reduce((sum: number, order: Order) => {
+            const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
               itemSum + (item.price * item.quantity), 0) || 0;
             return sum + orderTotal;
           }, 0) : 0;
@@ -204,10 +231,10 @@ export default function AdminAnalytics() {
 
       // Calculate top products by revenue from orders
       const topProducts = orders ? orders
-        .flatMap((order: any) => order.order_items || [])
-        .reduce((acc: any[], item: any) => {
+        .flatMap((order: Order) => order.order_items || [])
+        .reduce((acc: TopProduct[], item: OrderItem) => {
           // Find the jersey details for this order item
-          const jersey = jerseys.find((j: any) => j.id === item.jersey_id);
+          const jersey = jerseys.find((j: Jersey) => j.id === item.jersey_id);
           const productName = jersey ? jersey.title : (item.product_title || 'Unknown Product');
           
           const existing = acc.find(p => p.name === productName);
@@ -224,7 +251,7 @@ export default function AdminAnalytics() {
           }
           return acc;
         }, [])
-        .sort((a: { revenue: number }, b: { revenue: number }) => b.revenue - a.revenue)
+        .sort((a: TopProduct, b: TopProduct) => b.revenue - a.revenue)
         .slice(0, 5) : [];
 
       // Create a map to store stats for each seller
@@ -234,9 +261,9 @@ export default function AdminAnalytics() {
       > = {};
 
       // Loop through each order and calculate stats
-      orders?.forEach((order: any) => {
-      order?.order_items?.forEach((item: any) => {
-        const jersey = jerseys?.find((j: any) => j.id === item.jersey_id);
+      orders?.forEach((order: Order) => {
+      order?.order_items?.forEach((item: OrderItem) => {
+        const jersey = jerseys?.find((j: Jersey) => j.id === item.jersey_id);
         if (!jersey) return; // Skip if jersey not found (safety check)
 
         const sellerId = jersey.seller_id;
@@ -260,13 +287,13 @@ export default function AdminAnalytics() {
         name: sellerId,
         sales: data.sales,
         orders: data.orders.size,
-        products: jerseys?.filter((j: any) => j.seller_id === sellerId)?.length || 0,
+        products: jerseys?.filter((j: Jersey) => j.seller_id === sellerId)?.length || 0,
       }))
       .sort((a, b) => b.sales - a.sales);
 
 
       // Calculate seller performance
-      const sellerPerformance = sellerStats.map((seller: { name: string; orders: number; sales: number }) => ({
+      const sellerPerformance = sellerStats.map((seller: TopSeller) => ({
         seller: seller.name,
         growth: Math.floor(Math.random() * 30) + 5, // Mock growth for now
         orders: seller.orders,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeftIcon, UserIcon, CreditCardIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, UserIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 export default function Profile() {

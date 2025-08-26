@@ -37,6 +37,11 @@ interface ShippingDetails {
   pincode: string;
 }
 
+interface User {
+  id: string;
+  email?: string;
+}
+
 export default function Checkout() {
   const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
   const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
@@ -49,7 +54,7 @@ export default function Checkout() {
     pincode: ''
   });
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -106,15 +111,13 @@ export default function Checkout() {
     try {
       // Calculate totals
       const subtotal = checkoutItems.reduce((sum, item) => sum + (item.jersey.price * item.quantity), 0);
-      const shipping = 0; // Shipping always 0
-      const total = subtotal + shipping;
 
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
-          total_amount: total,
+          total_amount: subtotal,
           shipping_address: JSON.stringify(shippingDetails),
           status: 'pending',
           payment_status: 'pending'
@@ -229,8 +232,6 @@ export default function Checkout() {
   }
 
   const subtotal = checkoutItems.reduce((sum, item) => sum + (item.jersey.price * item.quantity), 0);
-  const shipping = 0;
-  const total = subtotal + shipping;
 
   return (
     <div className="min-h-screen bg-background">

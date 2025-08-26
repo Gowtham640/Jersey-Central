@@ -6,8 +6,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
   TruckIcon,
-  XCircleIcon,
-  EyeIcon
+  XCircleIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { supabase } from '../../supabase-client';
@@ -115,24 +114,6 @@ export default function Orders() {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const parseShippingAddress = (addressString: string) => {
-    try {
-      return JSON.parse(addressString);
-    } catch {
-      return { fullName: 'N/A', address: 'N/A', city: 'N/A', state: 'N/A', pincode: 'N/A' };
     }
   };
 

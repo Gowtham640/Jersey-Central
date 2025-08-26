@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../supabase-client';
 import { StarIcon, XMarkIcon } from '@heroicons/react/24/solid';
@@ -31,7 +31,7 @@ interface SizeOption {
   stock: number;
 }
 
-export default function JerseyDetailPage() {
+function JerseyDetailContent() {
   const { id } = useParams();
   const router = useRouter();
   const [jersey, setJersey] = useState<Jersey | null>(null);
@@ -322,5 +322,20 @@ export default function JerseyDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function JerseyDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <JerseyDetailContent />
+    </Suspense>
   );
 }

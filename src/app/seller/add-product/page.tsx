@@ -6,24 +6,26 @@ import {supabase } from "../../supabase-client";
 import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 
+type SizeData = {
+  available: boolean;
+  stock: number;
+};
 
 
-interface SizeData {
-  available: boolean
-  stock: number
-}
 
-interface FormData {
-  title: string
-  price: number
-  club: string
-  season: string
-  sizes: Record<string, SizeData> // e.g. { S: { available: true, stock: 2 }, M: { available: false, stock: 0 } }
-}
+type ProductData = {
+  title: string;
+  club: string;
+  season: string;
+  price: string;
+  quality: string;
+  sizes: Record<string, SizeData>;
+  tags: string[];
+};
 
 export default function AddProduct() {
   const router=useRouter();
-  const [data, setData] = useState({
+  const [data, setData] = useState<ProductData>({
     title: '',
     club: '',
     season: '',
@@ -35,7 +37,7 @@ export default function AddProduct() {
       L: { available: false, stock: 0 },
       XL: { available: false, stock: 0 }
     },
-    tags: [] as string[]
+    tags: []
   });
 
   const [jerseyImage,setJerseyImage]=useState<File[] | null>(null);
@@ -129,8 +131,8 @@ export default function AddProduct() {
 
   // 4️⃣ Prepare jersey_stock inserts
   const stockRows = Object.entries(data.sizes)
-    .filter(([_, sizeData]) => sizeData.available && sizeData.stock > 0)
-    .map(([size, sizeData]) => ({
+    .filter(([, sizeData]: [string, SizeData]) => sizeData.available && sizeData.stock > 0)
+    .map(([size, sizeData]: [string, SizeData]) => ({
       jersey_id: newJerseyId,
       size: size,
       stock: sizeData.stock
@@ -255,7 +257,7 @@ export default function AddProduct() {
               <h2 className="text-xl font-semibold text-gray-900">Size & Stock Management</h2>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(data.sizes).map(([size, sizeData]) => (
+                {Object.entries(data.sizes).map(([size, sizeData]: [string, SizeData]) => (
                   <div key={size} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-3">
                       <input

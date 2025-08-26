@@ -18,7 +18,7 @@ interface Product {
   price: number;
   quality: string;
   jersey_stock: JerseyStock[];
-  image_url: any;
+  image_url: string | string[];
   seller_id: string;
   created_at: string;
   seller?: {
@@ -41,7 +41,7 @@ export default function AdminProducts() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
 
-  const getFirstImageUrl = (imageUrl: any): string => {
+  const getFirstImageUrl = (imageUrl: string | string[]): string => {
     if (!imageUrl) return '';
     try {
       const parsed = typeof imageUrl === 'string' ? JSON.parse(imageUrl) : imageUrl;
@@ -78,7 +78,7 @@ export default function AdminProducts() {
         seller: { email: jersey.seller_id } // Using seller_id as email for now
       }));
 
-      setProducts(productsWithSellers as any);
+      setProducts(productsWithSellers as Product[]);
     } catch (error) {
       console.error('Error in fetchProducts:', error);
       toast.error('Failed to fetch products');
@@ -123,14 +123,6 @@ export default function AdminProducts() {
     if (totalStock === 0) return 'Out of Stock';
     if (totalStock <= 10) return 'Low Stock';
     return 'In Stock';
-  };
-
-  const getQualityColor = (quality: string) => {
-    switch (quality) {
-      case 'First Copy': return 'bg-purple-100 text-purple-800';
-      case 'Fan Version': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const filteredProducts = products.filter(product => {
@@ -423,7 +415,7 @@ export default function AdminProducts() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Delete Product</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to delete "{selectedProduct.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{selectedProduct.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex space-x-3">
               <button

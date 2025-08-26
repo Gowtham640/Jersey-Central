@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, ChartBarIcon, UserIcon, CubeIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, ChartBarIcon, UserIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { supabase } from '../supabase-client';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,23 @@ interface QuickStats {
   totalProducts: number;
   activeOrders: number;
   thisMonthSales: number;
+}
+
+interface OrderItem {
+  order_id: string;
+  price: number;
+  quantity: number;
+  created_at: string;
+  jerseys: {
+    seller_id: string;
+  }[];
+}
+
+interface ProcessedOrder {
+  id: string;
+  total_amount: number;
+  created_at: string;
+  status: string;
 }
 
 export default function SellerDashboard() {
@@ -83,7 +100,7 @@ export default function SellerDashboard() {
           // Silently handle error without logging
         } else if (orderItems) {
           // Group by order_id to get unique orders
-          const uniqueOrders = orderItems.reduce((acc: any[], item: any) => {
+          const uniqueOrders = orderItems.reduce((acc: ProcessedOrder[], item: OrderItem) => {
             if (!acc.find(o => o.id === item.order_id)) {
               acc.push({
                 id: item.order_id,

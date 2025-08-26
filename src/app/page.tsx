@@ -1,23 +1,43 @@
   "use client";
   import { useEffect,useState } from "react";
-  import Image from "next/image";
-  import Signup from "@/icons/signup.svg";
   import Link from "next/link";
   import {supabase } from "./supabase-client";
   import { useRouter } from "next/navigation";
-  import toast from "react-hot-toast";
+  
+
+  interface HomepageProduct {
+    id: string;
+    jersey_id: string;
+    order_index: number;
+    jersey: {
+      id: string;
+      title: string;
+      price: number;
+      image_url: string | string[];
+      club?: string;
+      quality?: string;
+    };
+  }
+
+  interface HomepageSection {
+    id: string;
+    title: string;
+    visible: boolean;
+    homepage_products: HomepageProduct[];
+    products: HomepageProduct[];
+  }
 
   export default function Home() {
 
     //session code
 
-      const [session,setSession]=useState<any>(null)
+      const [session,setSession]=useState<{ user?: { id: string; email?: string } } | null>(null)
   
   //for the menu to log out
   const[showMenu,setShowMenu]=useState(false);
 
   // Homepage sections state
-  const [homepageSections, setHomepageSections] = useState<any[]>([]);
+  const [homepageSections, setHomepageSections] = useState<HomepageSection[]>([]);
 
     const router = useRouter();
 
@@ -69,12 +89,12 @@
         }
 
         // Transform the data to match our interface
-        const transformedSections = (data || []).map((section: any) => ({
+        const transformedSections = (data || []).map((section: HomepageSection) => ({
           ...section,
-          products: (section.homepage_products || []).map((product: any) => ({
+          products: (section.homepage_products || []).map((product: HomepageProduct) => ({
             ...product,
             jersey: product.jersey
-          })).sort((a: any, b: any) => a.order_index - b.order_index)
+          })).sort((a: HomepageProduct, b: HomepageProduct) => a.order_index - b.order_index)
         }));
 
         setHomepageSections(transformedSections);
@@ -92,7 +112,7 @@
         if(event==="SIGNED_IN" && session){
           const user=session.user;
 
-          const{data: existingUser, error: fetchError}=await supabase.from("users").select("mail").eq("mail",user.email).single();
+          const{data: existingUser}=await supabase.from("users").select("mail").eq("mail",user.email).single();
 
           if(!existingUser){
             const{error}=await supabase.from("users").insert({
@@ -112,17 +132,10 @@
       })
 
       return()=>{
-        authListener.subscription.unsubscribe;
+        authListener.subscription.unsubscribe();
       }
 
     },[])
-
-    const logout=async ()=>{
-      await supabase.auth.signOut();
-      toast.success("Logged out successfully!");
-      setSession(null);
-      setShowMenu(false);
-    };
 
     const handleSearch = () => {
       const query = (searchQuery || "").trim();
@@ -130,7 +143,7 @@
       router.push(url);
     };
 
-    const getFirstImageUrl = (imageUrl: any): string => {
+    const getFirstImageUrl = (imageUrl: string | string[]): string => {
       if (!imageUrl) return "";
       try {
         const parsed = typeof imageUrl === "string" ? JSON.parse(imageUrl) : imageUrl;
@@ -258,7 +271,7 @@
             <div key={section.id} className="relative left-4 bg-white w-[1000px] h-[480px] rounded-md flex items-center justify-evenly pt-10 mb-8 shadow-lg hover:shadow-2xl"> 
               <p className="absolute top-[20px] text-[24px] font-sans font-bold text-black">{section.title}</p>
               {section.products.length > 0 ? (
-                section.products.slice(0, 3).map((product: any) => (
+                section.products.slice(0, 3).map((product: HomepageProduct) => (
                   <div onClick={() => router.push(`/buyer/${product.jersey_id}`)} key={product.id} className="bg-gray-100 w-[250px] h-[300px] rounded-md p-4 cursor-pointer hover:bg-gray-200 transition-colors shadow-md">
                     <img 
                       src={getFirstImageUrl(product.jersey?.image_url)} 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../supabase-client';
 
@@ -8,14 +8,14 @@ interface JerseyRecord {
 	id: string;
 	title: string;
 	price: number;
-	image_url: any;
+	image_url: string | string[];
 	club?: string;
 	quality?: string;
 	season?: string;
 	jersey_stock?: { size: string; stock: number }[];
 }
 
-export default function BuyerSearchPage() {
+function BuyerSearchContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
@@ -29,7 +29,6 @@ export default function BuyerSearchPage() {
 	const [size, setSize] = useState<string>('');
 	const [sortBy, setSortBy] = useState<string>('relevance');
 	const [attempts, setAttempts] = useState<Record<string, number>>({});
-	const [isLoading, setIsLoading] = useState(true);
 
 	const q = searchParams.get('q')?.trim() || '';
 
@@ -53,8 +52,8 @@ export default function BuyerSearchPage() {
 				}
 				
 				setResults((data || []) as JerseyRecord[]);
-			} catch (err: any) {
-				setError(err?.message || 'Failed to fetch results');
+			} catch (err: unknown) {
+				setError(err instanceof Error ? err.message : 'Failed to fetch results');
 			} finally {
 				setLoading(false);
 			}
@@ -76,7 +75,7 @@ export default function BuyerSearchPage() {
 
 	const handleImageError = (
 		productId: string,
-		originalImageUrl: any,
+		originalImageUrl: string | string[],
 		e: React.SyntheticEvent<HTMLImageElement>
 	  ) => {
 		const target = e.target as HTMLImageElement;
@@ -91,7 +90,7 @@ export default function BuyerSearchPage() {
 		}
 	};
 
-	const getFirstImageUrl = (imageUrl: any): string => {
+	const getFirstImageUrl = (imageUrl: string | string[]): string => {
 		try {
 		  if (!imageUrl) return '';
 	  
@@ -294,7 +293,7 @@ export default function BuyerSearchPage() {
 											src={getFirstImageUrl(product.image_url)}
 											alt={product.title}
 											className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-											onLoad={() => setIsLoading(false)}
+											onLoad={() => setLoading(false)}
 											onError={(e) => handleImageError(product.id,product.image_url,e)}
 										/>
 									) : (
@@ -331,5 +330,20 @@ export default function BuyerSearchPage() {
 				)}
 			</div>
 		</div>
+	);
+}
+
+export default function BuyerSearchPage() {
+	return (
+		<Suspense fallback={
+			<div className="flex items-center justify-center py-20">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+					<p className="mt-4 text-gray-600">Loading...</p>
+				</div>
+			</div>
+		}>
+			<BuyerSearchContent />
+		</Suspense>
 	);
 }
