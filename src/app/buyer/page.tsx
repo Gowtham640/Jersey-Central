@@ -8,7 +8,7 @@ interface JerseyRecord {
 	id: string;
 	title: string;
 	price: number;
-	image_url: any;
+	image_url: string | string[];
 	club?: string;
 	quality?: string;
 	season?: string;
@@ -29,7 +29,6 @@ export default function BuyerSearchPage() {
 	const [size, setSize] = useState<string>('');
 	const [sortBy, setSortBy] = useState<string>('relevance');
 	const [attempts, setAttempts] = useState<Record<string, number>>({});
-	const [isLoading, setIsLoading] = useState(true);
 
 	const q = searchParams.get('q')?.trim() || '';
 
@@ -53,8 +52,8 @@ export default function BuyerSearchPage() {
 				}
 				
 				setResults((data || []) as JerseyRecord[]);
-			} catch (err: any) {
-				setError(err?.message || 'Failed to fetch results');
+			} catch (err: unknown) {
+				setError(err instanceof Error ? err.message : 'Failed to fetch results');
 			} finally {
 				setLoading(false);
 			}
@@ -76,7 +75,7 @@ export default function BuyerSearchPage() {
 
 	const handleImageError = (
 		productId: string,
-		originalImageUrl: any,
+		originalImageUrl: string | string[],
 		e: React.SyntheticEvent<HTMLImageElement>
 	  ) => {
 		const target = e.target as HTMLImageElement;
@@ -91,7 +90,7 @@ export default function BuyerSearchPage() {
 		}
 	};
 
-	const getFirstImageUrl = (imageUrl: any): string => {
+	const getFirstImageUrl = (imageUrl: string | string[]): string => {
 		try {
 		  if (!imageUrl) return '';
 	  

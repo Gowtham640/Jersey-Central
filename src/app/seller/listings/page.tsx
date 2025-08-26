@@ -18,13 +18,8 @@ interface Product {
   quality: string;
   jersey_stock: JerseyStock[];
   quantity: number; 
-  image_url: any;
+  image_url: string | string[];
 }
-type StockItem = {
-  size: string;
-  quantity: number;
-  id?:number;
-};
 
 export default function Listings() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -50,43 +45,7 @@ export default function Listings() {
     });
   };
 
-  // No export — as you asked
-  async function updateStock(
-    jerseyId: string,
-    sizeOrArray: string | { size: string; stock: number }[],
-    stockValue?: number
-  ) {
-    // Case 1: Array of stock objects
-    if (Array.isArray(sizeOrArray)) {
-      const results = [];
-      for (const item of sizeOrArray) {
-        const { size, stock } = item;
-        const { data, error } = await supabase
-          .from('jersey_stock')
-          .update({ stock })
-          .eq('jersey_id', jerseyId)
-          .eq('size', size)
-          .select();
-
-        if (error) throw error;
-        results.push(data);
-      }
-      return results;
-    }
-
-    // Case 2: Single size-stock update
-    const { data, error } = await supabase
-      .from('jersey_stock')
-      .update({ stock: stockValue })
-      .eq('product_id', jerseyId)
-      .eq('size', sizeOrArray)
-      .select();
-
-    if (error) throw error;
-    return data;
-  }
-
-  const getFirstImageUrl = (imageUrl: any): string => {
+  const getFirstImageUrl = (imageUrl: string | string[]): string => {
     if (!imageUrl) return '';
     try {
       const parsed = typeof imageUrl === 'string' ? JSON.parse(imageUrl) : imageUrl;
@@ -101,7 +60,7 @@ export default function Listings() {
     e.preventDefault();
     if (!editData) return;
   
-    const { id, jersey_stock, ...updates } = editData as any;
+            const { id, jersey_stock, ...updates } = editData as Product;
   
     // 1️⃣ Update jersey details
     const { error: jerseyError } = await supabase

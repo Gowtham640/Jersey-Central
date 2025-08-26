@@ -1,16 +1,13 @@
 'use client';
 
 import { 
-  UsersIcon, 
   CubeIcon, 
   ShoppingCartIcon, 
   ChartBarIcon, 
   PlusIcon,
   EyeIcon,
   CheckIcon,
-  XMarkIcon,
-  UserIcon,
-  PencilIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useEffect,useState } from "react";
@@ -30,6 +27,18 @@ interface SellerRequest {
   address: string;
   productsCount?: number;
   totalSales?: number;
+}
+
+interface OrderItem {
+  id: string;
+  price: number;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  seller_id: string;
+  order_items: OrderItem[];
 }
 
 interface QuickStats {
@@ -81,8 +90,8 @@ export default function AdminDashboard() {
       }
 
       // Calculate total revenue from orders
-      const totalRevenue = orders ? orders.reduce((sum: number, order: any) => {
-        const orderTotal = order.order_items?.reduce((itemSum: number, item: any) => 
+      const totalRevenue = orders ? orders.reduce((sum: number, order: Order) => {
+        const orderTotal = order.order_items?.reduce((itemSum: number, item: OrderItem) => 
           itemSum + (item.price * item.quantity), 0) || 0;
         return sum + orderTotal;
       }, 0) : 0;
@@ -91,7 +100,7 @@ export default function AdminDashboard() {
       const totalOrders = orders ? orders.length : 0;
 
       // Get unique active sellers from orders
-      const activeSellers = orders ? [...new Set(orders.map((order: any) => order.seller_id))].length : 0;
+      const activeSellers = orders ? [...new Set(orders.map((order: Order) => order.seller_id))].length : 0;
 
       // Get seller request stats
       const pendingApprovals = sellerRequests.filter(s => s.approval_status === 'pending').length;
@@ -117,7 +126,7 @@ export default function AdminDashboard() {
     if (sellerRequests.length > 0) {
       fetchQuickStats();
     }
-  }, [sellerRequests]);
+  }, [sellerRequests, fetchQuickStats]);
 
   const handleSellerAction = async (sellerId: number, email: string, action: 'approve' | 'reject') => {
     const { error: reqError } = await supabase
@@ -155,9 +164,6 @@ export default function AdminDashboard() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const pendingRequests = sellerRequests.filter(s => s.approval_status === 'pending');
-  const oldRequests = sellerRequests.filter(s => s.approval_status !== 'pending');
 
   return (
     <div className="min-h-screen bg-background">

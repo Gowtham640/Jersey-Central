@@ -130,33 +130,9 @@ export default function Cart() {
     }
   };
 
-  // Toggle item selection
-  const toggleItemSelection = (itemId: string) => {
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  };
-
-  // Select all items
-  const selectAllItems = () => {
-    if (selectedItems.size === cartItems.length) {
-      setSelectedItems(new Set());
-    } else {
-      setSelectedItems(new Set(cartItems.map(item => item.id)));
-    }
-  };
-
   // Calculate totals for selected items
   const selectedItemsData = cartItems.filter(item => selectedItems.has(item.id));
   const subtotal = selectedItemsData.reduce((sum, item) => sum + (item.jersey.price * item.quantity), 0);
-  const shipping = selectedItemsData.length > 0 ? 100 : 0; // Fixed shipping cost
-  const total = subtotal + shipping;
 
   // Proceed to checkout
   const proceedToCheckout = () => {

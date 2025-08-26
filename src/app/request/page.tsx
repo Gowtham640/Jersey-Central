@@ -66,9 +66,9 @@ export default function SellerRequestForm() {
       });
 
       setTimeout(() => router.push('/'), 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting seller request:', JSON.stringify(err, null, 2));
-      setMessage(err?.message || 'Something went wrong.');
+      setMessage(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setLoading(false);
     }

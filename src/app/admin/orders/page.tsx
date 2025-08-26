@@ -37,7 +37,7 @@ export default function AdminOrders() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch real orders data
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -75,12 +75,12 @@ export default function AdminOrders() {
         return;
       }
 
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, order_status: newStatus as any }
-          : order
-      ));
-      
+        setOrders(prev => prev.map(order =>
+          order.id === orderId
+            ? { ...order, order_status: newStatus as 'pending' | 'confirmed' | 'fulfilled' | 'cancelled' }
+            : order
+        ));
+
       toast.success('Order status updated successfully');
     } catch (error) {
       console.error('Error in updateOrderStatus:', error);
@@ -288,7 +288,7 @@ export default function AdminOrders() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedOrder(order);
                           setShowOrderModal(true);
@@ -328,7 +328,7 @@ export default function AdminOrders() {
                 ✕
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -340,12 +340,12 @@ export default function AdminOrders() {
                   <p className="text-sm text-gray-900">{selectedOrder.buyer_phone}</p>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Address</label>
                 <p className="text-sm text-gray-900">{selectedOrder.buyer_address}</p>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Products</label>
                 <div className="space-y-2">
@@ -373,7 +373,7 @@ export default function AdminOrders() {
                   ))}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Seller</label>
@@ -384,14 +384,14 @@ export default function AdminOrders() {
                   <p className="text-sm text-gray-900">₹{selectedOrder.total_amount}</p>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Order Date</label>
                 <p className="text-sm text-gray-900">
                   {new Date(selectedOrder.created_at).toLocaleDateString()}
                 </p>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Order Status</label>
                 <select
@@ -406,7 +406,7 @@ export default function AdminOrders() {
                 </select>
               </div>
             </div>
-            
+
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => {

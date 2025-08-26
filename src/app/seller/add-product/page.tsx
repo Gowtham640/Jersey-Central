@@ -6,14 +6,12 @@ import {supabase } from "../../supabase-client";
 import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 
-
-
 interface SizeData {
   available: boolean
   stock: number
 }
 
-interface FormData {
+interface JerseyData {
   title: string
   price: number
   club: string

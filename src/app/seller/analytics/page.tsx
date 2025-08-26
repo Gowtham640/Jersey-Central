@@ -6,9 +6,49 @@ import Link from 'next/link';
 import { supabase } from '../../supabase-client';
 import toast from 'react-hot-toast';
 
+interface Jersey {
+  id: string;
+  title: string;
+}
+
+interface OrderItem {
+  id: string;
+  jersey_id: string;
+  price: number;
+  quantity: number;
+  size: string;
+  jerseys: {
+    seller_id: string;
+  }[];
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  status: string;
+  order_items: OrderItem[];
+}
+
+interface ProductStats {
+  name: string;
+  sales: number;
+  revenue: number;
+}
+
+interface AnalyticsData {
+  totalSales: number;
+  totalOrders: number;
+  thisWeekSales: number;
+  thisMonthSales: number;
+  productStats: ProductStats[];
+  topProducts: Array<{ jerseyId: string; name: string; sales: number; revenue: number }>;
+  weeklyData: Array<{ week: string; sales: number }>;
+  monthlyData: Array<{ month: string; sales: number }>;
+}
+
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState('month');
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const formatCurrency = (amount: number) =>
@@ -45,7 +85,7 @@ export default function Analytics() {
     
         // Map for product names
         const jerseyNameById = new Map<string, string>(
-          (jerseys || []).map((j: any) => [j.id, j.title])
+          (jerseys || []).map((j: Jersey) => [j.id, j.title])
         );
     
         // 3) Orders (ONLY items that belong to this seller)
@@ -76,14 +116,14 @@ export default function Analytics() {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
-        const toNum = (v: any) => {
+        const toNum = (v: unknown) => {
           const n = Number(v);
           return Number.isFinite(n) ? n : 0;
         };
     
         // --------- If we have orders, compute from orders only ----------
         if (orders && orders.length > 0) {
-          const productStats: Record<string, { name: string; sales: number; revenue: number }> = {};
+          const productStatsMap: Record<string, ProductStats> = {};
           const orderTotals: Record<string, number> = {};
     
           let totalSales = 0;
@@ -91,11 +131,11 @@ export default function Analytics() {
           let thisWeekSales = 0;
           let thisMonthSales = 0;
     
-          (orders as any[]).forEach((order) => {
+          (orders as Order[]).forEach((order) => {
             totalOrders += 1;
             let orderTotal = 0;
     
-            (order.order_items || []).forEach((item: any) => {
+            (order.order_items || []).forEach((item: OrderItem) => {
               const qty = Math.floor(toNum(item.quantity));
               const price = toNum(item.price);
               if (qty <= 0 || price <= 0) return;
@@ -105,9 +145,9 @@ export default function Analytics() {
     
               const jid = item.jersey_id;
               const name = jerseyNameById.get(jid) || `Product ${jid}`;
-              if (!productStats[jid]) productStats[jid] = { name, sales: 0, revenue: 0 };
-              productStats[jid].sales += qty;
-              productStats[jid].revenue += itemTotal;
+              if (!productStatsMap[jid]) productStatsMap[jid] = { name, sales: 0, revenue: 0 };
+              productStatsMap[jid].sales += qty;
+              productStatsMap[jid].revenue += itemTotal;
             });
     
             orderTotals[order.id] = orderTotal;
@@ -124,7 +164,7 @@ export default function Analytics() {
             const start = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
             const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
             let weekSales = 0;
-            (orders as any[]).forEach((order) => {
+            (orders as Order[]).forEach((order) => {
               const created = new Date(order.created_at);
               if (created >= start && created < end) weekSales += orderTotals[order.id] || 0;
             });
@@ -137,7 +177,7 @@ export default function Analytics() {
             const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const monthEnd = new Date(now.getFullYear(), monthStart.getMonth() + 1, 0);
             let monthSales = 0;
-            (orders as any[]).forEach((order) => {
+            (orders as Order[]).forEach((order) => {
               const created = new Date(order.created_at);
               if (created >= monthStart && created <= monthEnd) monthSales += orderTotals[order.id] || 0;
             });
@@ -147,7 +187,7 @@ export default function Analytics() {
             });
           }
     
-          const topProducts = Object.entries(productStats)
+          const topProducts = Object.entries(productStatsMap)
             .map(([jid, s]) => ({ jerseyId: jid, name: s.name, sales: s.sales, revenue: s.revenue }))
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 5);
@@ -157,6 +197,7 @@ export default function Analytics() {
             totalOrders,
             thisWeekSales,
             thisMonthSales,
+            productStats: Object.values(productStatsMap),
             weeklyData,
             monthlyData,
             topProducts,
@@ -178,7 +219,7 @@ export default function Analytics() {
           });
     
           const topProducts = (jerseys || [])
-            .map((j: any) => ({ jerseyId: j.id, name: j.title, sales: 0, revenue: 0 }))
+            .map((j: Jersey) => ({ jerseyId: j.id, name: j.title, sales: 0, revenue: 0 }))
             .slice(0, 5);
     
           setAnalytics({
@@ -186,6 +227,7 @@ export default function Analytics() {
             totalOrders: 0,
             thisWeekSales: 0,
             thisMonthSales: 0,
+            productStats: [],
             weeklyData,
             monthlyData,
             topProducts,
@@ -199,6 +241,7 @@ export default function Analytics() {
           totalOrders: 0,
           thisWeekSales: 0,
           thisMonthSales: 0,
+          productStats: [],
           weeklyData: [],
           monthlyData: [],
           topProducts: [],
@@ -220,6 +263,7 @@ export default function Analytics() {
           totalOrders: 0,
           thisWeekSales: 0,
           thisMonthSales: 0,
+          productStats: [],
           weeklyData: [],
           monthlyData: [],
           topProducts: [],
@@ -247,9 +291,9 @@ export default function Analytics() {
     );
   }
 
-  const maxWeekly = Math.max(...analytics.weeklyData.map((w: any) => w.sales), 1);
-  const maxMonthly = Math.max(...analytics.monthlyData.map((m: any) => m.sales), 1);
-  const maxRevenue = Math.max(...analytics.topProducts.map((p: any) => p.revenue), 1);
+  const maxWeekly = Math.max(...analytics.weeklyData.map((w) => w.sales), 1);
+  const maxMonthly = Math.max(...analytics.monthlyData.map((m) => m.sales), 1);
+  const maxRevenue = Math.max(...analytics.topProducts.map((p) => p.revenue), 1);
 
   return (
     <div className="min-h-screen bg-background">
@@ -352,7 +396,7 @@ export default function Analytics() {
               Revenue Trend
             </h2>
             <div className="space-y-4">
-              {analytics.weeklyData.map((data: any, idx: number) => (
+                              {analytics.weeklyData.map((data, idx: number) => (
                 <div key={idx} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{data.week}</span>
                   <div className="flex items-center space-x-2">
@@ -382,7 +426,7 @@ export default function Analytics() {
               Monthly Performance
             </h2>
             <div className="space-y-4">
-              {analytics.monthlyData.map((data: any, idx: number) => (
+                              {analytics.monthlyData.map((data, idx: number) => (
                 <div key={idx} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{data.month}</span>
                   <div className="flex items-center space-x-2">
@@ -433,7 +477,7 @@ export default function Analytics() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {analytics.topProducts.map((p: any, idx: number) => (
+                {analytics.topProducts.map((p, idx: number) => (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {p.name}

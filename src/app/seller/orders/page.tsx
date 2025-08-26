@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '../../supabase-client';
 import toast from 'react-hot-toast';
 
+// --- Type definitions ---
 interface JerseyMeta {
   seller_id: string;
   title: string | null;
@@ -18,7 +19,7 @@ interface OrderItem {
   size: string;
   quantity: number;
   price: number;
-  jersey?: JerseyMeta; // fetched via join
+  jersey?: JerseyMeta;
 }
 
 interface Order {
@@ -27,6 +28,27 @@ interface Order {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
   order_items: OrderItem[];
+}
+
+// Supabase raw response for mapping
+interface SupabaseOrderResponse {
+  id: string;
+  total_amount: number;
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  created_at: string;
+  order_items: {
+    id: string;
+    jersey_id: string;
+    size: string;
+    price: number;
+    quantity: number;
+    jerseys: {
+      id: string;
+      seller_id: string;
+      title: string | null;
+      image_url: string | null;
+    };
+  }[];
 }
 
 export default function Orders() {
@@ -38,18 +60,20 @@ export default function Orders() {
   const [tempStatus, setTempStatus] = useState<string | null>(null);
 
   // Helper: parse image_url (single string or JSON array string) and return first URL
-  const firstImage = (image_url?: string | null) => {
+  const firstImage = (image_url?: string | null): string => {
     if (!image_url) return '';
     try {
       const parsed = JSON.parse(image_url);
-      if (Array.isArray(parsed) && parsed.length > 0) return String(parsed[0] || '');
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return String(parsed[0] || '');
+      }
     } catch {
       // not JSON, treat as single URL
     }
     return image_url;
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (): Promise<void> => {
     try {
       setLoading(true);
 
@@ -64,8 +88,7 @@ export default function Orders() {
         return;
       }
 
-      // Fetch orders that have at least one item for this seller
-      // Include jersey title + image_url for the modal
+      // Fetch orders
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
@@ -96,29 +119,27 @@ export default function Orders() {
         return;
       }
 
-      // Normalize into our shape
-      const transformed: Order[] =
-        (ordersData || []).map((o: any) => ({
-          id: o.id,
-          total_amount: o.total_amount,
-          status: o.status,
-          created_at: o.created_at,
-          order_items:
-            (o.order_items || []).map((it: any) => ({
-              id: it.id,
-              jersey_id: it.jersey_id,
-              size: it.size,
-              price: it.price,
-              quantity: it.quantity,
-              jersey: it.jerseys
-                ? {
-                    seller_id: it.jerseys.seller_id,
-                    title: it.jerseys.title ?? null,
-                    image_url: it.jerseys.image_url ?? null,
-                  }
-                : undefined,
-            })) ?? [],
-        })) ?? [];
+      const transformed: Order[] = (ordersData ?? []).map((o) => {
+        const order = o as SupabaseOrderResponse;
+        return {
+          id: order.id,
+          total_amount: order.total_amount,
+          status: order.status,
+          created_at: order.created_at,
+          order_items: order.order_items.map((it) => ({
+            id: it.id,
+            jersey_id: it.jersey_id,
+            size: it.size,
+            price: it.price,
+            quantity: it.quantity,
+            jersey: {
+              seller_id: it.jerseys.seller_id,
+              title: it.jerseys.title,
+              image_url: it.jerseys.image_url,
+            },
+          })),
+        };
+      });
 
       setOrders(transformed);
     } catch {
@@ -129,18 +150,16 @@ export default function Orders() {
     }
   };
 
-  // Safely restore stock for the seller's items in this order (jersey_id + size)
-  const restoreStockForOrderItems = async (order: Order) => {
+  const restoreStockForOrderItems = async (order: Order): Promise<void> => {
     const itemErrors: string[] = [];
 
     for (const item of order.order_items) {
-      // 1) fetch the stock row
       const { data: stockRow, error: fetchErr } = await supabase
         .from('jersey_stock')
         .select('id, stock')
         .eq('jersey_id', item.jersey_id)
         .eq('size', item.size)
-        .maybeSingle();
+        .maybeSingle<{ id: string; stock: number }>();
 
       if (fetchErr) {
         itemErrors.push(`fetch stock failed (size ${item.size})`);
@@ -148,7 +167,6 @@ export default function Orders() {
       }
 
       if (stockRow) {
-        // 2) update existing row: stock + quantity
         const newStock = Number(stockRow.stock ?? 0) + Number(item.quantity);
         const { error: updErr } = await supabase
           .from('jersey_stock')
@@ -157,7 +175,6 @@ export default function Orders() {
 
         if (updErr) itemErrors.push(`update failed (size ${item.size})`);
       } else {
-        // 3) row missing → insert a new one with cancelled qty
         const { error: insErr } = await supabase
           .from('jersey_stock')
           .insert({
@@ -175,7 +192,7 @@ export default function Orders() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string): Promise<void> => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) {
       toast.error('Order not found');
@@ -185,31 +202,26 @@ export default function Orders() {
     const oldStatus = order.status;
 
     try {
-      // If moving to "cancelled" from a non-cancelled state, restore stock first
       if (newStatus === 'cancelled' && oldStatus !== 'cancelled') {
         await restoreStockForOrderItems(order);
       }
 
-      // Update order status in DB
       const { error: updateError } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);
 
       if (updateError) {
-        // If DB status update fails and we had restored stock, you may want to roll back.
-        // Since we aren't using a transaction here, just surface the error.
         throw updateError;
       }
 
-      // Update local state for UI
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as any } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as Order['status'] } : o))
       );
 
       toast.success('Order status updated successfully');
-    } catch (err: any) {
-      const msg = typeof err?.message === 'string' ? err.message : 'Failed to update order status';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update order status';
       toast.error(msg);
     }
   };

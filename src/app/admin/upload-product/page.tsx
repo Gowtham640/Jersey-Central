@@ -6,10 +6,7 @@ import {
   PlusIcon, 
   EyeIcon, 
   EyeSlashIcon, 
-  TrashIcon, 
-  PencilIcon,
-  ArrowsUpDownIcon,
-  XMarkIcon
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { supabase } from '../../supabase-client';
@@ -50,6 +47,21 @@ interface Jersey {
   seller_id: string;
 }
 
+interface HomepageProductData {
+  id: string;
+  jersey_id: string;
+  section_id: string;
+  order_index: number;
+  jersey: {
+    id: string;
+    title: string;
+    price: number;
+    image_url: string;
+    club: string;
+    quality: string;
+  };
+}
+
 export default function HomepageEditor() {
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [availableJerseys, setAvailableJerseys] = useState<Jersey[]>([]);
@@ -87,10 +99,10 @@ export default function HomepageEditor() {
       // Transform the data to match our interface
       const transformedSections = (sectionsData || []).map(section => ({
         ...section,
-        products: (section.homepage_products || []).map((product: any) => ({
+        products: (section.homepage_products || []).map((product: HomepageProductData) => ({
           ...product,
           jersey: product.jersey
-        })).sort((a: any, b: any) => a.order_index - b.order_index)
+        })).sort((a: HomepageProductData, b: HomepageProductData) => a.order_index - b.order_index)
       }));
 
       setSections(transformedSections);
@@ -299,37 +311,6 @@ export default function HomepageEditor() {
     }
   };
 
-  // Reorder sections
-  const reorderSections = async (fromIndex: number, toIndex: number) => {
-    try {
-      const newSections = [...sections];
-      const [movedSection] = newSections.splice(fromIndex, 1);
-      newSections.splice(toIndex, 0, movedSection);
-
-      // Update order for all sections
-      const updates = newSections.map((section, index) => ({
-        id: section.id,
-        order_index: index
-      }));
-
-      const { error } = await supabase
-        .from('homepage_sections')
-        .upsert(updates);
-
-      if (error) {
-        console.error('Error reordering sections:', error);
-        toast.error('Failed to reorder sections');
-        return;
-      }
-
-      setSections(newSections);
-      toast.success('Sections reordered successfully');
-    } catch (error) {
-      console.error('Error in reorderSections:', error);
-      toast.error('Failed to reorder sections');
-    }
-  };
-
   useEffect(() => {
     fetchHomepageData();
   }, []);
@@ -510,7 +491,7 @@ export default function HomepageEditor() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Section Type</label>
                 <select
                   value={newSectionType}
-                  onChange={(e) => setNewSectionType(e.target.value as any)}
+                  onChange={(e) => setNewSectionType(e.target.value as 'top-picks' | 'best-deals' | 'new-arrivals' | 'trending' | 'custom')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900"
                 >
                   <option value="top-picks">Top Picks</option>
