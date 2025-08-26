@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../supabase-client';
 
@@ -15,7 +15,7 @@ interface JerseyRecord {
 	jersey_stock?: { size: string; stock: number }[];
 }
 
-export default function BuyerSearchPage() {
+function BuyerSearchContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
@@ -330,5 +330,20 @@ export default function BuyerSearchPage() {
 				)}
 			</div>
 		</div>
+	);
+}
+
+export default function BuyerSearchPage() {
+	return (
+		<Suspense fallback={
+			<div className="flex items-center justify-center py-20">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+					<p className="mt-4 text-gray-600">Loading...</p>
+				</div>
+			</div>
+		}>
+			<BuyerSearchContent />
+		</Suspense>
 	);
 }
