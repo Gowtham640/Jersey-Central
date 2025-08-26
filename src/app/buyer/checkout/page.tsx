@@ -111,7 +111,6 @@ export default function Checkout() {
     try {
       // Calculate totals
       const subtotal = checkoutItems.reduce((sum, item) => sum + (item.jersey.price * item.quantity), 0);
-      const shipping = 0; // Shipping always 0
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -233,8 +232,6 @@ export default function Checkout() {
   }
 
   const subtotal = checkoutItems.reduce((sum, item) => sum + (item.jersey.price * item.quantity), 0);
-  const shipping = 0;
-  const total = subtotal + shipping;
 
   return (
     <div className="min-h-screen bg-background">

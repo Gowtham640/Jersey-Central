@@ -3,7 +3,7 @@
   import Link from "next/link";
   import {supabase } from "./supabase-client";
   import { useRouter } from "next/navigation";
-  import toast from "react-hot-toast";
+  
 
   interface HomepageProduct {
     id: string;
@@ -112,7 +112,7 @@
         if(event==="SIGNED_IN" && session){
           const user=session.user;
 
-          const{data: existingUser, error: fetchError}=await supabase.from("users").select("mail").eq("mail",user.email).single();
+          const{data: existingUser}=await supabase.from("users").select("mail").eq("mail",user.email).single();
 
           if(!existingUser){
             const{error}=await supabase.from("users").insert({
@@ -132,7 +132,7 @@
       })
 
       return()=>{
-        authListener.subscription.unsubscribe;
+        authListener.subscription.unsubscribe();
       }
 
     },[])

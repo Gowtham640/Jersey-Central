@@ -426,7 +426,7 @@ export default function Listings() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Product</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to delete "{selectedProduct.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{selectedProduct.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex space-x-3">
               <button

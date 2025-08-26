@@ -11,13 +11,7 @@ interface SizeData {
   stock: number
 }
 
-interface JerseyData {
-  title: string
-  price: number
-  club: string
-  season: string
-  sizes: Record<string, SizeData> // e.g. { S: { available: true, stock: 2 }, M: { available: false, stock: 0 } }
-}
+
 
 export default function AddProduct() {
   const router=useRouter();
@@ -127,7 +121,7 @@ export default function AddProduct() {
 
   // 4️⃣ Prepare jersey_stock inserts
   const stockRows = Object.entries(data.sizes)
-    .filter(([_, sizeData]) => sizeData.available && sizeData.stock > 0)
+    .filter(([, sizeData]) => sizeData.available && sizeData.stock > 0)
     .map(([size, sizeData]) => ({
       jersey_id: newJerseyId,
       size: size,
