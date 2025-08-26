@@ -293,7 +293,7 @@ export default function BuyerSearchPage() {
 											src={getFirstImageUrl(product.image_url)}
 											alt={product.title}
 											className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-											onLoad={() => setIsLoading(false)}
+											onLoad={() => setLoading(false)}
 											onError={(e) => handleImageError(product.id,product.image_url,e)}
 										/>
 									) : (
