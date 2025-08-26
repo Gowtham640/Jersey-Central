@@ -15,7 +15,15 @@ interface SizeData {
 
 export default function AddProduct() {
   const router=useRouter();
-  const [data, setData] = useState({
+  const [data, setData] = useState<{
+    title: string;
+    club: string;
+    season: string;
+    price: string;
+    quality: string;
+    sizes: Record<string, SizeData>;
+    tags: string[];
+  }>({
     title: '',
     club: '',
     season: '',
@@ -27,7 +35,7 @@ export default function AddProduct() {
       L: { available: false, stock: 0 },
       XL: { available: false, stock: 0 }
     },
-    tags: [] as string[]
+    tags: []
   });
 
   const [jerseyImage,setJerseyImage]=useState<File[] | null>(null);
