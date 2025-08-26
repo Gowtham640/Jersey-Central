@@ -47,7 +47,7 @@ interface SupabaseOrderResponse {
       seller_id: string;
       title: string | null;
       image_url: string | null;
-    };
+    }[];
   }[];
 }
 
@@ -133,9 +133,9 @@ export default function Orders() {
             price: it.price,
             quantity: it.quantity,
             jersey: {
-              seller_id: it.jerseys.seller_id,
-              title: it.jerseys.title,
-              image_url: it.jerseys.image_url,
+              seller_id: it.jerseys[0].seller_id,
+              title: it.jerseys[0].title,
+              image_url: it.jerseys[0].image_url,
             },
           })),
         };
