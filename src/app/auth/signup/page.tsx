@@ -11,7 +11,7 @@ export default function SignupPage() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [fullName, setFullName] = useState("");
+    //const [fullName, setFullName] = useState("");
 
 
     const router = useRouter();
@@ -52,7 +52,7 @@ export default function SignupPage() {
         //clearing data
         setEmail("");
         setPassword("");
-        setFullName("");
+        //setFullName("");
         //routing
         setTimeout(() => router.push("/"), 2000);
     };
