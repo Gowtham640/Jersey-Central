@@ -27,11 +27,20 @@
     products: HomepageProduct[];
   }
 
+  interface User {
+    id: number;
+    mail: string;
+    user_id: string;
+    role: string;
+    full_name: string;
+  }
+
   export default function Home() {
 
     //session code
 
       const [session,setSession]=useState<{ user?: { id: string; email?: string } } | null>(null)
+      const [userData, setUserData] = useState<User | null>(null);
   
   //for the menu to log out
   const[showMenu,setShowMenu]=useState(false);
@@ -56,15 +65,16 @@
 
       setSession(currentSession.data.session);
 
-      // fetch role if logged in
+      // fetch role and user data if logged in
       if (currentSession.data.session?.user?.id) {
-        const { data: roleRow } = await supabase
+        const { data: userRow } = await supabase
           .from("users")
-          .select("role")
+          .select("role, full_name")
           .eq("user_id", currentSession.data.session.user.id)
           .single();
-        if (roleRow?.role) {
-          setUserRole(roleRow.role as string);
+        if (userRow) {
+          setUserRole(userRow.role as string);
+          setUserData(userRow as User);
         }
       }
     }
@@ -112,20 +122,43 @@
         if(event==="SIGNED_IN" && session){
           const user=session.user;
 
-          const{data: existingUser}=await supabase.from("users").select("mail").eq("mail",user.email).single();
+          const{data: existingUser}=await supabase.from("users").select("mail, full_name").eq("mail",user.email).single();
 
           if(!existingUser){
             const{error}=await supabase.from("users").insert({
               mail:user.email,
               user_id: session.user.id,
               role:"buyer",
+              full_name: 'User', // Default name for new users
             });
             if(error){
               console.log(error);
+            } else {
+              // Set the user data after successful insert
+              setUserData({
+                id: 0, // This will be set by the database
+                mail: user.email || '',
+                user_id: session.user.id,
+                role: 'buyer',
+                full_name: 'User'
+              });
+              setUserRole('buyer');
             }
           }
           else{
             console.log("User already exists.");
+            // Fetch user data for existing user
+            if (session.user?.id) {
+              const { data: userRow } = await supabase
+                .from("users")
+                .select("role, full_name")
+                .eq("user_id", session.user.id)
+                .single();
+              if (userRow) {
+                setUserRole(userRow.role as string);
+                setUserData(userRow as User);
+              }
+            }
           }
         }
         setSession(session)
@@ -161,15 +194,20 @@
 
     return (
       //main div tag
-      <div className="flex gap-20 flex-col items-center w-full">
+      <div className="flex gap-8 md:gap-20 flex-col items-center w-full">
 
 
-        <div className={`relative w-full h-[300px] flex justify-center items-center flex-col gap-4 ${
+        <div className={`relative w-full h-[250px] md:h-[350px] flex justify-center items-center flex-col gap-6 ${
         session ? 'bg-black' : 'bg-blue-600'
       }`}> {/* The black box on top */}
 
           {/* this is the svg for profile/signup  */}
-          <div className="absolute right-[100px] top-4">
+          <div className="absolute right-4 md:right-[100px] top-4 flex items-center gap-3">
+            {session && userData && (
+              <div className="text-white text-sm font-medium hidden sm:block">
+                Hey, {userData.full_name.split(' ')[0]}!
+              </div>
+            )}
             {session ? (
               // Logged in → show button that toggles dropdown
               <div className="relative">
@@ -249,14 +287,14 @@
             )}
           </div>
 
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#D9D9D9" className="absolute right-[60px] top-4" onClick={()=>router.push('/buyer/cart')}><path d="M280-80q-33 0-56.5-23.5T200-160q0-33 23.5-56.5T280-240q33 0 56.5 23.5T360-160q0 33-23.5 56.5T280-80Zm400 0q-33 0-56.5-23.5T600-160q0-33 23.5-56.5T680-240q33 0 56.5 23.5T760-160q0 33-23.5 56.5T680-80ZM246-720l96 200h280l110-200H246Zm-38-80h590q23 0 35 20.5t1 41.5L692-482q-11 20-29.5 31T622-440H324l-44 80h480v80H280q-45 0-68-39.5t-2-78.5l54-98-144-304H40v-80h130l38 80Zm134 280h280-280Z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#D9D9D9" className="absolute right-16 md:right-[60px] top-4 cursor-pointer" onClick={()=>router.push('/buyer/cart')}><path d="M280-80q-33 0-56.5-23.5T200-160q0-33 23.5-56.5T280-240q33 0 56.5 23.5T360-160q0 33-23.5 56.5T280-80Zm400 0q-33 0-56.5-23.5T600-160q0-33 23.5-56.5T680-240q33 0 56.5 23.5T760-160q0 33-23.5 56.5T680-80ZM246-720l96 200h280l110-200H246Zm-38-80h590q23 0 35 20.5t1 41.5L692-482q-11 20-29.5 31T622-440H324l-44 80h480v80H280q-45 0-68-39.5t-2-78.5l54-98-144-304H40v-80h130l38 80Zm134 280h280-280Z"/></svg>
 
           {/* Removed the orders/news SVG */}
 
-          <p className="text-[64px] text-white font-sans font-bold">Wear your passion</p>
-          <div className="flex gap-2 items-center">
-            <input value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter'){ handleSearch(); } }} type="text" placeholder="Find your jersey" className="bg-white h-[32px] w-[326px] rounded-lg text-[14px] font-roboto text-gray-600 p-2" />
-            <button onClick={handleSearch} className="h-[32px] px-3 rounded-lg bg-green-600 hover:bg-green-700 text-white text-[14px]">Search</button>
+          <p className="text-3xl md:text-[64px] text-white font-sans font-bold text-center px-4">Wear your passion</p>
+          <div className="flex flex-col sm:flex-row gap-2 items-center w-full max-w-[280px] px-4">
+            <input value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter'){ handleSearch(); } }} type="text" placeholder="Find your jersey" className="bg-white h-[36px] w-full rounded-lg text-[14px] font-roboto text-gray-600 px-3" />
+            <button onClick={handleSearch} className="h-[36px] px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white text-[14px] whitespace-nowrap">Search</button>
           </div>
         </div>
 
@@ -268,54 +306,36 @@
         {/* Dynamic Homepage Sections */}
         {homepageSections.map((section) => (
           section.visible && (
-            <div key={section.id} className="relative left-4 bg-white w-[1000px] h-[480px] rounded-md flex items-center justify-evenly pt-10 mb-8 shadow-lg hover:shadow-2xl"> 
-              <p className="absolute top-[20px] text-[24px] font-sans font-bold text-black">{section.title}</p>
-              {section.products.length > 0 ? (
-                section.products.slice(0, 3).map((product: HomepageProduct) => (
-                  <div onClick={() => router.push(`/buyer/${product.jersey_id}`)} key={product.id} className="bg-gray-100 w-[250px] h-[300px] rounded-md p-4 cursor-pointer hover:bg-gray-200 transition-colors shadow-md">
-                    <img 
-                      src={getFirstImageUrl(product.jersey?.image_url)} 
-                      alt={product.jersey?.title}
-                      className="w-full h-48 object-cover rounded-md mb-2"
-                    />
-                    <h3 className="font-semibold text-sm text-black truncate">{product.jersey?.title}</h3>
-                    <p className="text-xs text-gray-700">{product.jersey?.quality}</p>
-                    <p className="font-bold text-sm text-black">₹{product.jersey?.price}</p>
-                  </div>
-                ))
-              ) : (
-                // Placeholder boxes when no products
-                Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="bg-gray-100 w-[250px] h-[300px] rounded-md flex items-center justify-center shadow-md">
-                    <p className="text-gray-500 text-sm">No products yet</p>
-                  </div>
-                ))
-              )}
+            <div key={section.id} className="relative bg-white w-full max-w-[1200px] h-auto min-h-[520px] rounded-lg flex flex-col md:flex-row items-center justify-evenly pt-12 mb-10 shadow-xl hover:shadow-2xl p-6"> 
+              <p className="absolute top-6 text-2xl md:text-[28px] font-sans font-bold text-black">{section.title}</p>
+              <div className="flex flex-col md:flex-row gap-6 md:gap-10 mt-20 md:mt-0">
+                {section.products.length > 0 ? (
+                  section.products.slice(0, 3).map((product: HomepageProduct) => (
+                    <div onClick={() => router.push(`/buyer/${product.jersey_id}`)} key={product.id} className="bg-gray-50 w-full md:w-[320px] h-[380px] rounded-lg p-5 cursor-pointer hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl border border-gray-100">
+                      <img 
+                        src={getFirstImageUrl(product.jersey?.image_url)} 
+                        alt={product.jersey?.title}
+                        className="w-full h-56 object-cover rounded-lg mb-3"
+                      />
+                      <h3 className="font-semibold text-base text-black truncate mb-2">{product.jersey?.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{product.jersey?.quality}</p>
+                      <p className="font-bold text-lg text-black">₹{product.jersey?.price}</p>
+                    </div>
+                  ))
+                ) : (
+                  // Placeholder boxes when no products
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="bg-gray-50 w-full md:w-[320px] h-[380px] rounded-lg flex items-center justify-center shadow-lg border border-gray-100">
+                      <p className="text-gray-500 text-sm">No products yet</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )
         ))}
 
-        {/* Search Section */}
-        <div className="relative left-4 bg-white w-[1000px] h-[200px] rounded-md flex items-center justify-center mb-8 shadow-lg hover:shadow-2xl">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Search Jerseys</h2>
-            <div className="flex items-center space-x-4">
-              <input
-                type="text"
-                placeholder="Search for jerseys..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900 w-80"
-              />
-              <button
-                onClick={handleSearch}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Search
-              </button>
-            </div>
-          </div>
-        </div>
+        
 
 
       </div>

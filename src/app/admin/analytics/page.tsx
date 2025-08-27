@@ -18,6 +18,9 @@ interface Jersey {
     size: string;
     stock: number;
   }>;
+  seller?: {
+    full_name: string;
+  };
 }
 
 interface OrderItem {
@@ -86,12 +89,13 @@ export default function AdminAnalytics() {
     try {
       setLoading(true);
       
-      // Fetch all jerseys with stock data
+      // Fetch all jerseys with stock data and seller information
       const { data: jerseys, error: jerseysError } = await supabase
         .from('jerseys')
         .select(`
           *,
-          jersey_stock(size, stock)
+          jersey_stock(size, stock),
+          seller:users!jerseys_seller_id_fkey(full_name)
         `);
 
       if (jerseysError) {
@@ -246,7 +250,7 @@ export default function AdminAnalytics() {
               name: productName,
               sales: item.quantity,
               revenue: item.price * item.quantity,
-              seller: jersey ? jersey.seller_id : 'Unknown'
+              seller: jersey?.seller?.full_name || jersey?.seller_id || 'Unknown'
             });
           }
           return acc;
@@ -283,12 +287,15 @@ export default function AdminAnalytics() {
 
       // Convert the stats map into an array and sort by sales
       const sellerStats = Object.entries(sellerStatsMap)
-      .map(([sellerId, data]) => ({
-        name: sellerId,
-        sales: data.sales,
-        orders: data.orders.size,
-        products: jerseys?.filter((j: Jersey) => j.seller_id === sellerId)?.length || 0,
-      }))
+      .map(([sellerId, data]) => {
+        const jersey = jerseys?.find((j: Jersey) => j.seller_id === sellerId);
+        return {
+          name: jersey?.seller?.full_name || sellerId,
+          sales: data.sales,
+          orders: data.orders.size,
+          products: jerseys?.filter((j: Jersey) => j.seller_id === sellerId)?.length || 0,
+        };
+      })
       .sort((a, b) => b.sales - a.sales);
 
 
@@ -361,24 +368,24 @@ export default function AdminAnalytics() {
       {/* Header */}
       <div className="bg-black shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-6 gap-4">
             <div className="flex items-center">
               <Link href="/admin" className="mr-4">
                 <ArrowLeftIcon className="h-6 w-6 text-white hover:text-gray-300" />
               </Link>
-              <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-white">Platform Analytics</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:space-x-4">
               <button
                 onClick={() => fetchAnalytics()}
-                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500"
+                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 text-sm"
               >
                 Refresh Data
               </button>
               <select
                 value={timeFrame}
                 onChange={(e) => setTimeFrame(e.target.value)}
-                className="px-3 py-2 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                className="px-3 py-2 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-sm"
               >
                 <option value="week" className='text-gray-900'>This Week</option>
                 <option value="month"className='text-gray-900'>This Month</option>
@@ -391,12 +398,12 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Time Frame Selector */}
-        <div className="bg-white rounded-lg shadow-sm border-0 p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-lg font-semibold text-gray-900">Analytics Overview</h2>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:space-x-4">
               <label className="text-sm font-medium text-gray-700">Time Frame:</label>
               <select
                 value={timeFrame}
@@ -412,8 +419,8 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <ShoppingBagIcon className="h-6 w-6 text-blue-600" />
@@ -424,7 +431,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <CurrencyRupeeIcon className="h-6 w-6 text-green-600" />
@@ -435,7 +442,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <UsersIcon className="h-6 w-6 text-purple-600" />
@@ -446,7 +453,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-orange-100 rounded-lg">
                 <ArrowTrendingUpIcon className="h-6 w-6 text-orange-600" />
@@ -460,16 +467,16 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Charts and Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
           {/* Revenue Chart */}
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h2>
             <div className="space-y-4">
               {analytics.monthlyData.map((data, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{data.month}</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <span className="text-sm text-gray-600">{data.month}</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2">
+                    <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full" 
                         style={{ width: `${Math.max((data.sales / Math.max(...analytics.monthlyData.map(m => m.sales))) * 100, 5)}%` }}
@@ -483,14 +490,14 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Seller Performance */}
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Performance</h2>
             <div className="space-y-4">
               {analytics.sellerPerformance.map((seller, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{seller.seller}</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <span className="text-sm text-gray-600">{seller.seller}</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2">
+                    <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full" 
                         style={{ width: `${Math.max((seller.revenue / Math.max(...analytics.sellerPerformance.map(s => s.revenue))) * 100, 5)}%` }}
@@ -506,26 +513,26 @@ export default function AdminAnalytics() {
 
         {/* Top Sellers */}
         <div className="bg-white rounded-lg shadow-sm border-0 overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-4 md:px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Top Performing Sellers</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Seller
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Sales
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Orders
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Products
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Performance
                   </th>
                 </tr>
@@ -533,21 +540,21 @@ export default function AdminAnalytics() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {analytics.topSellers.map((seller, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{seller.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatCurrency(seller.sales)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {seller.orders} orders
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {seller.products} products
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="w-20 sm:w-24 bg-gray-200 rounded-full h-2 mr-2">
                           <div 
                             className="bg-green-600 h-2 rounded-full" 
                             style={{ width: `${Math.max((seller.sales / Math.max(...analytics.topSellers.map(s => s.sales))) * 100, 5)}%` }}
@@ -567,26 +574,26 @@ export default function AdminAnalytics() {
 
         {/* Top Products */}
         <div className="bg-white rounded-lg shadow-sm border-0 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-4 md:px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Top Selling Products</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Seller
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Units Sold
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Revenue
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Performance
                   </th>
                 </tr>
@@ -594,21 +601,21 @@ export default function AdminAnalytics() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {analytics.topProducts.map((product, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{product.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product.seller}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product.sales} units
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatCurrency(product.revenue)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="w-20 sm:w-24 bg-gray-200 rounded-full h-2 mr-2">
                           <div 
                             className="bg-green-600 h-2 rounded-full" 
                             style={{ width: `${Math.max((product.revenue / Math.max(...analytics.topProducts.map(p => p.revenue))) * 100, 5)}%` }}
