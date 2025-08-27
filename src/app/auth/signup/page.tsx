@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent,useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -16,6 +16,21 @@ export default function SignupPage() {
 
     const router = useRouter();
 
+    useEffect(() => {
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            if (session) {
+              localStorage.setItem("supabaseSession", JSON.stringify(session));
+            } else {
+              localStorage.removeItem("supabaseSession");
+            }
+          }
+        );
+    
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      }, []);
 
     //submitting data to supabase
 
