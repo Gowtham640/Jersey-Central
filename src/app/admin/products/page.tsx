@@ -22,10 +22,8 @@ interface Product {
   seller_id: string;
   created_at: string;
   seller?: {
-    email: string;
-    user_metadata?: {
-      full_name?: string;
-    };
+    full_name: string;
+    mail: string;
   };
 }
 
@@ -56,7 +54,7 @@ export default function AdminProducts() {
     try {
       setLoading(true);
       
-      // Fetch all jerseys with stock data
+      // Fetch all jerseys with stock data and seller information
       const { data: jerseys, error } = await supabase
         .from('jerseys')
         .select(`
@@ -71,11 +69,13 @@ export default function AdminProducts() {
         return;
       }
 
-      // For now, we'll use seller_id as the seller identifier
-      // In a real implementation, you might want to create a separate sellers table
+      // Map products with seller information
       const productsWithSellers = (jerseys || []).map((jersey) => ({
         ...jersey,
-        seller: { email: jersey.seller_id } // Using seller_id as email for now
+        seller: { 
+          full_name: 'Seller', // Since we can't directly join with auth.users, we'll use a placeholder
+          mail: jersey.seller_id 
+        }
       }));
 
       setProducts(productsWithSellers as Product[]);
@@ -128,9 +128,9 @@ export default function AdminProducts() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.club.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.seller?.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+                         (product.seller?.full_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesClub = filterClub === 'all' || product.club === filterClub;
-    const matchesSeller = filterSeller === 'all' || product.seller?.email === filterSeller;
+    const matchesSeller = filterSeller === 'all' || product.seller?.full_name === filterSeller;
     const matchesQuality = filterQuality === 'all' || product.quality === filterQuality;
     const matchesStatus = filterStatus === 'all' || getStatusText(product) === filterStatus;
 
@@ -138,7 +138,7 @@ export default function AdminProducts() {
   });
 
   const uniqueClubs = [...new Set(products.map(p => p.club))];
-  const uniqueSellers = [...new Set(products.map(p => p.seller?.email).filter(Boolean))];
+  const uniqueSellers = [...new Set(products.map(p => p.seller?.full_name).filter(Boolean))];
 
   useEffect(() => {
     fetchProducts();
@@ -160,12 +160,12 @@ export default function AdminProducts() {
       {/* Header */}
       <div className="bg-black shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-6 gap-4">
             <div className="flex items-center">
               <Link href="/admin" className="mr-4">
                 <ArrowLeftIcon className="h-6 w-6 text-white hover:text-white" />
               </Link>
-              <h1 className="text-2xl font-bold font-sans text-white">Product Control</h1>
+              <h1 className="text-xl md:text-2xl font-bold font-sans text-white">Product Control</h1>
             </div>
             <Link
               href="/admin/upload-product"
@@ -179,10 +179,10 @@ export default function AdminProducts() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <div className="h-6 w-6 bg-blue-600 rounded"></div>
@@ -193,7 +193,7 @@ export default function AdminProducts() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <div className="h-6 w-6 bg-green-600 rounded"></div>
@@ -206,7 +206,7 @@ export default function AdminProducts() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-red-100 rounded-lg">
                 <div className="h-6 w-6 bg-red-600 rounded"></div>
@@ -219,7 +219,7 @@ export default function AdminProducts() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+          <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <div className="h-6 w-6 bg-purple-600 rounded"></div>
@@ -233,8 +233,8 @@ export default function AdminProducts() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border-0 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border-0 p-4 md:p-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="relative">
@@ -351,7 +351,7 @@ export default function AdminProducts() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.seller?.email || 'Unknown Seller'}
+                      {product.seller?.full_name || 'Unknown Seller'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ₹{product.price}

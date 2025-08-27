@@ -11,6 +11,7 @@ export default function SignupPage() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    //const [fullName, setFullName] = useState("");
 
 
     const router = useRouter();
@@ -32,7 +33,7 @@ export default function SignupPage() {
                 return;
             }
             else {
-                toast.success("Signup successful! Check your mail.", { duration: 2000 });
+                toast.success("Check your mail to verify your account", { duration: 2000 });
             }
         }
         else {
@@ -43,6 +44,7 @@ export default function SignupPage() {
                 return;
             }
             else {
+                
                 toast.success("Signin successful!", { duration: 2000 });
             }
         }
@@ -50,23 +52,24 @@ export default function SignupPage() {
         //clearing data
         setEmail("");
         setPassword("");
+        //setFullName("");
         //routing
         setTimeout(() => router.push("/"), 2000);
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen">
-            <div className="bg-white shadow-lg hover:shadow-2xl w-[400px] h-[350px] rounded-md flex flex-col items-center gap-6 p-6">
-                <p className="text-[30px] font-sans font-extrabold text-black">{isSignUp ? "Sign Up" : "Sign In"}</p>
-                <form onSubmit={handleSubmit} className="flex flex-col items-center gap-5">
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your mail id" className="border-[1px] border-gray-500 h-[42px] w-[326px] rounded-lg text-[14px] font-roboto text-gray-600 p-2"></input>
-                    <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="border-[1px] border-gray-500 h-[42px] w-[326px] rounded-lg text-[14px] font-roboto text-gray-600 p-2"></input>
-                    <button onClick={() => router.push("/")} type="submit" className="bg-green-600 w-[100px] h-[42px] rounded-md text-[14px] font-roboto">
+        <div className="flex justify-center items-center min-h-screen p-4">
+            <div className="bg-white shadow-lg hover:shadow-2xl w-full max-w-[400px] min-h-[350px] rounded-md flex flex-col items-center gap-6 p-6">
+                <p className="text-2xl md:text-[30px] font-sans font-extrabold text-black text-center">{isSignUp ? "Sign Up" : "Sign In"}</p>
+                <form onSubmit={handleSubmit} className="flex flex-col items-center gap-5 w-full">
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your mail id" className="border-[1px] border-gray-500 h-[42px] w-full max-w-[326px] rounded-lg text-[14px] font-roboto text-gray-600 p-2" required></input>
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="border-[1px] border-gray-500 h-[42px] w-full max-w-[326px] rounded-lg text-[14px] font-roboto text-gray-600 p-2" required></input>
+                    <button type="submit" className="bg-green-600 w-[100px] h-[42px] rounded-md text-[14px] font-roboto text-white">
                         Submit
                     </button>
                 </form>
-                <p className="text-[14px] font-roboto font-medium text-black">
-                    {isSignUp ? "Already have an account?" : "Don't have an account?"}<span className="text-green-600" onClick={() => setIsSignUp((prev) => !prev)}>{isSignUp ? "Sign in" : "Sign up"}</span> </p>
+                <p className="text-[14px] font-roboto font-medium text-black text-center">
+                    {isSignUp ? "Already have an account?" : "Don't have an account?"}<span className="text-green-600 cursor-pointer" onClick={() => setIsSignUp((prev) => !prev)}>{isSignUp ? "Sign in" : "Sign up"}</span> </p>
 
             </div>
         </div>

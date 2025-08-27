@@ -31,7 +31,7 @@ interface HomepageProduct {
     id: string;
     title: string;
     price: number;
-    image_url: string;
+    image_url: string | string[];
     club: string;
     quality: string;
   };
@@ -41,7 +41,7 @@ interface Jersey {
   id: string;
   title: string;
   price: number;
-  image_url: string;
+  image_url: string | string[];
   club: string;
   quality: string;
   seller_id: string;
@@ -56,7 +56,7 @@ interface HomepageProductData {
     id: string;
     title: string;
     price: number;
-    image_url: string;
+    image_url: string | string[];
     club: string;
     quality: string;
   };
@@ -72,6 +72,20 @@ export default function HomepageEditor() {
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [newSectionType, setNewSectionType] = useState<'top-picks' | 'best-deals' | 'new-arrivals' | 'trending' | 'custom'>('custom');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Function to get first image URL from image_url field
+  const getFirstImageUrl = (imageUrl: string | string[]): string => {
+    if (!imageUrl) return "";
+    try {
+      const parsed = typeof imageUrl === "string" ? JSON.parse(imageUrl) : imageUrl;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0];
+      }
+      return typeof imageUrl === "string" ? imageUrl : "";
+    } catch {
+      return typeof imageUrl === "string" ? imageUrl : "";
+    }
+  };
 
   // Fetch homepage sections and products
   const fetchHomepageData = async () => {
@@ -417,7 +431,7 @@ export default function HomepageEditor() {
                     {/* IMAGE SECTION */}
                     {product.jersey?.image_url && (
                       <img
-                        src={product.jersey.image_url}
+                        src={getFirstImageUrl(product.jersey.image_url)}
                         alt={product.jersey.title}
                         className="w-full h-32 object-cover rounded-lg mb-2"
                       />

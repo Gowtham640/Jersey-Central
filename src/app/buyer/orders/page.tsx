@@ -33,7 +33,7 @@ interface OrderItem {
   jersey: {
     id: string;
     title: string;
-    image_url: string;
+    image_url: string | string[];
     club: string;
     quality: string;
   };
@@ -44,6 +44,20 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+
+  // Function to get first image URL from image_url field
+  const getFirstImageUrl = (imageUrl: string | string[]): string => {
+    if (!imageUrl) return "";
+    try {
+      const parsed = typeof imageUrl === "string" ? JSON.parse(imageUrl) : imageUrl;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0];
+      }
+      return typeof imageUrl === "string" ? imageUrl : "";
+    } catch {
+      return typeof imageUrl === "string" ? imageUrl : "";
+    }
+  };
 
   // Fetch orders for the current user
   const fetchOrders = async () => {
@@ -188,7 +202,7 @@ export default function Orders() {
                   {order.order_items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                       <img
-                        src={item.jersey.image_url}
+                        src={getFirstImageUrl(item.jersey.image_url)}
                         alt={item.jersey.title}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
@@ -273,7 +287,7 @@ export default function Orders() {
                   {selectedOrder.order_items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                       <img
-                        src={item.jersey.image_url}
+                        src={getFirstImageUrl(item.jersey.image_url)}
                         alt={item.jersey.title}
                         className="w-12 h-12 object-cover rounded-lg"
                       />
