@@ -59,8 +59,7 @@ export default function AdminProducts() {
         .from('jerseys')
         .select(`
           *,
-          jersey_stock(size, stock),
-          seller:users!jerseys_seller_id_fkey(full_name, mail)
+          jersey_stock(size, stock)
         `);
 
       if (error) {
@@ -73,7 +72,10 @@ export default function AdminProducts() {
       // Map products with seller information
       const productsWithSellers = (jerseys || []).map((jersey) => ({
         ...jersey,
-        seller: jersey.seller || { full_name: 'Unknown Seller', mail: jersey.seller_id }
+        seller: { 
+          full_name: 'Seller', // Since we can't directly join with auth.users, we'll use a placeholder
+          mail: jersey.seller_id 
+        }
       }));
 
       setProducts(productsWithSellers as Product[]);

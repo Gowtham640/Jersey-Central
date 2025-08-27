@@ -164,9 +164,7 @@
       <div className="flex gap-8 md:gap-16 lg:gap-20 flex-col items-center w-full">
 
 
-        <div className={`relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2  ${
-        session ? 'bg-black' : 'bg-blue-600'
-      }`}> {/* The black box on top */}
+        <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2 bg-black"> {/* The black box on top */}
 
           {/* this is the svg for profile/signup  */}
           <div className="absolute right-[50px] sm:right-[50px] md:right-[100px] top-4">
@@ -235,17 +233,20 @@
               </div>
             ) : (
               // Not logged in → route to signup
-              <Link href="/auth/signup">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  height="24px"
-                  viewBox="0 -960 960 960"
-                  width="24px"
-                  fill="#CCCCCC"
-                >
-                  <path d="M485-240Zm26 80H160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440v80q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32h245q4 21 10.5 41t15.5 39Zm209 80q-73-18-116.5-80T560-298v-102l160-80 160 80v102q0 76-43.5 138T720-80Zm0-84q38-18 59-55t21-79v-52l-80-40-80 40v52q0 42 21 79t59 55ZM480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm240 363Z" />
-                </svg>
-              </Link>
+              <div className="flex flex-col items-center">
+                <Link href="/auth/signup">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="24px"
+                    viewBox="0 -960 960 960"
+                    width="24px"
+                    fill="#CCCCCC"
+                  >
+                    <path d="M485-240Zm26 80H160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440v80q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32h245q4 21 10.5 41t15.5 39Zm209 80q-73-18-116.5-80T560-298v-102l160-80 160 80v102q0 76-43.5 138T720-80Zm0-84q38-18 59-55t21-79v-52l-80-40-80 40v52q0 42 21 79t59 55ZM480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm240 363Z" />
+                  </svg>
+                </Link>
+                <span className="text-[10px] sm:text-[12px] md:text-[14px] text-white mt-1 font-sans font-medium" onClick={()=>router.push('/auth/signup')}>Sign in</span>
+              </div>
             )}
           </div>
 

@@ -9,7 +9,7 @@ interface Jersey {
   id: string;
   title: string;
   price: number;
-  image_url: string;
+  image_url: string | string[];
   club: string;
   season: string;
   seller_id: string;
@@ -89,35 +89,29 @@ export default function AdminAnalytics() {
     try {
       setLoading(true);
       
-      // Fetch all jerseys with stock data and seller information
+      // Fetch all jerseys with stock data
       const { data: jerseys, error: jerseysError } = await supabase
         .from('jerseys')
         .select(`
           *,
-          jersey_stock(size, stock),
-          seller:users!jerseys_seller_id_fkey(full_name)
+          jersey_stock(size, stock)
         `);
 
       if (jerseysError) {
         console.error('Error fetching jerseys:', jerseysError);
-        setAnalytics({
-          totalSales: 0,
-          totalOrders: 0,
-          totalSellers: 0,
-          activeSellers: 0,
-          thisWeekSales: 0,
-          thisMonthSales: 0,
-          weeklyData: [],
-          monthlyData: [],
-          topProducts: [],
-          topSellers: [],
-          sellerPerformance: []
-        });
         return;
       }
 
+      // Map jerseys with seller information
+      const jerseysWithSellers = (jerseys || []).map((jersey) => ({
+        ...jersey,
+        seller: { 
+          full_name: 'Seller' // Placeholder since we can't directly join with auth.users
+        }
+      }));
+
       // Handle case where jerseys is null or empty
-      if (!jerseys || jerseys.length === 0) {
+      if (!jerseysWithSellers || jerseysWithSellers.length === 0) {
         setAnalytics({
           totalSales: 0,
           totalOrders: 0,
@@ -177,12 +171,12 @@ export default function AdminAnalytics() {
         }, 0) : 0;
 
       // Get unique sellers from jerseys
-      const uniqueSellerIds = [...new Set(jerseys.map((jersey: Jersey) => jersey.seller_id))];
+      const uniqueSellerIds = [...new Set(jerseysWithSellers.map((jersey: Jersey) => jersey.seller_id))];
       const totalSellers = uniqueSellerIds.length;
 
       // Calculate active sellers (sellers with products created in last 30 days)
       const activeSellers = [...new Set(
-        jerseys
+        jerseysWithSellers
           .filter((jersey: Jersey) => new Date(jersey.created_at) >= monthAgo)
           .map((jersey: Jersey) => jersey.seller_id)
       )].length;
@@ -238,7 +232,7 @@ export default function AdminAnalytics() {
         .flatMap((order: Order) => order.order_items || [])
         .reduce((acc: TopProduct[], item: OrderItem) => {
           // Find the jersey details for this order item
-          const jersey = jerseys.find((j: Jersey) => j.id === item.jersey_id);
+          const jersey = jerseysWithSellers.find((j: Jersey) => j.id === item.jersey_id);
           const productName = jersey ? jersey.title : (item.product_title || 'Unknown Product');
           
           const existing = acc.find(p => p.name === productName);
@@ -267,7 +261,7 @@ export default function AdminAnalytics() {
       // Loop through each order and calculate stats
       orders?.forEach((order: Order) => {
       order?.order_items?.forEach((item: OrderItem) => {
-        const jersey = jerseys?.find((j: Jersey) => j.id === item.jersey_id);
+        const jersey = jerseysWithSellers?.find((j: Jersey) => j.id === item.jersey_id);
         if (!jersey) return; // Skip if jersey not found (safety check)
 
         const sellerId = jersey.seller_id;
@@ -288,12 +282,12 @@ export default function AdminAnalytics() {
       // Convert the stats map into an array and sort by sales
       const sellerStats = Object.entries(sellerStatsMap)
       .map(([sellerId, data]) => {
-        const jersey = jerseys?.find((j: Jersey) => j.seller_id === sellerId);
+        const jersey = jerseysWithSellers?.find((j: Jersey) => j.seller_id === sellerId);
         return {
           name: jersey?.seller?.full_name || sellerId,
           sales: data.sales,
           orders: data.orders.size,
-          products: jerseys?.filter((j: Jersey) => j.seller_id === sellerId)?.length || 0,
+          products: jerseysWithSellers?.filter((j: Jersey) => j.seller_id === sellerId)?.length || 0,
         };
       })
       .sort((a, b) => b.sales - a.sales);

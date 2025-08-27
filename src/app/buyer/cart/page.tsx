@@ -24,7 +24,7 @@ interface CartItem {
     id: string;
     title: string;
     price: number;
-    image_url: string;
+    image_url: string | string[];
     club: string;
     quality: string;
   };
@@ -35,6 +35,20 @@ export default function Cart() {
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const router = useRouter();
+
+  // Function to get first image URL from image_url field
+  const getFirstImageUrl = (imageUrl: string | string[]): string => {
+    if (!imageUrl) return "";
+    try {
+      const parsed = typeof imageUrl === "string" ? JSON.parse(imageUrl) : imageUrl;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0];
+      }
+      return typeof imageUrl === "string" ? imageUrl : "";
+    } catch {
+      return typeof imageUrl === "string" ? imageUrl : "";
+    }
+  };
 
   // Fetch cart items for the current user
   const fetchCartItems = async () => {
@@ -234,7 +248,7 @@ export default function Cart() {
                     />
                     
                     <img
-                      src={item.jersey.image_url}
+                      src={getFirstImageUrl(item.jersey.image_url)}
                       alt={item.jersey.title}
                       className="w-16 h-16 object-cover rounded-lg"
                     />
