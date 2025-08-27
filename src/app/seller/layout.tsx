@@ -3,23 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../supabase-client";
+import { useAuth } from "../providers";
 import toast from "react-hot-toast";
 
 const SellerLayout = ({ children }: { children: React.ReactNode }) => {
+  const { session, loading } = useAuth();
   const [isSeller, setIsSeller] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const verifySeller = async () => {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+      if (loading) return; // Wait for auth to initialize
 
-      if (sessionError || !session || !session.user) {
+      if (!session || !session.user) {
         toast.error("You must be logged in.");
-        router.push("/login"); // or replace with "/"
+        router.push("/");
         return;
       }
 
@@ -37,20 +36,21 @@ const SellerLayout = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      if (userData.role !== "seller" && userData.role!=="admin") {
+      if (userData.role !== "seller" && userData.role !== "admin") {
         toast.error("Access denied. Seller only.");
         router.push("/");
         return;
       }
 
       setIsSeller(true);
-      setLoading(false);
+      setVerifying(false);
     };
 
     verifySeller();
-  }, [router]);
+  }, [session, loading, router]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || verifying) return <div>Loading...</div>;
+  if (!session) return null;
 
   return <>{isSeller && children}</>;
 };

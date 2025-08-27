@@ -1,14 +1,20 @@
-import {createClient} from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
-
-export const supabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-    {
-        auth: {
-          persistSession: true,  // keeps user session in storage
-          autoRefreshToken: true, // refreshes tokens automatically
-          detectSessionInUrl: true, // handles sign-in redirects
-        },
-      }
-      
-);
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'supabase-auth-token',
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'jc3-nextjs',
+      },
+    },
+  }
+)

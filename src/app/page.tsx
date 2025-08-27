@@ -3,6 +3,7 @@
   import Link from "next/link";
   import {supabase } from "./supabase-client";
   import { useRouter } from "next/navigation";
+  import { useAuth } from "./providers";
   
 
   interface HomepageProduct {
@@ -29,9 +30,8 @@
 
   export default function Home() {
 
-    //session code
-
-      const [session,setSession]=useState<{ user?: { id: string; email?: string } } | null>(null)
+    // Use the new authentication context
+    const { session, loading } = useAuth();
   
   //for the menu to log out
   const[showMenu,setShowMenu]=useState(false);
@@ -47,27 +47,17 @@
     // search state
     const [searchQuery, setSearchQuery] = useState("");
 
-
-    const fetchSession= async ()=>{
-      console.log("Fetching session...");
-
-      const currentSession = await supabase.auth.getSession();
-      console.log("Supabase Session:", currentSession);
-
-      setSession(currentSession.data.session);
-
-      // fetch role if logged in
-      if (currentSession.data.session?.user?.id) {
-        const { data: roleRow } = await supabase
-          .from("users")
-          .select("role")
-          .eq("user_id", currentSession.data.session.user.id)
-          .single();
-        if (roleRow?.role) {
-          setUserRole(roleRow.role as string);
-        }
+    // Fetch user role when session changes
+    const fetchUserRole = async (userId: string) => {
+      const { data: roleRow } = await supabase
+        .from("users")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+      if (roleRow?.role) {
+        setUserRole(roleRow.role as string);
       }
-    }
+    };
 
     const fetchHomepageSections = async () => {
       try {
@@ -104,38 +94,13 @@
     };
 
     useEffect(()=>{
-      fetchSession();
       fetchHomepageSections();
 
-      const{data:authListener}= supabase.auth.onAuthStateChange(async (event,session)=>{
-
-        if(event==="SIGNED_IN" && session){
-          const user=session.user;
-
-          const{data: existingUser}=await supabase.from("users").select("mail").eq("mail",user.email).single();
-
-          if(!existingUser){
-            const{error}=await supabase.from("users").insert({
-              mail:user.email,
-              user_id: session.user.id,
-              role:"buyer",
-            });
-            if(error){
-              console.log(error);
-            }
-          }
-          else{
-            console.log("User already exists.");
-          }
-        }
-        setSession(session)
-      })
-
-      return()=>{
-        authListener.subscription.unsubscribe();
+      // Fetch user role when session is available
+      if (session?.user?.id) {
+        fetchUserRole(session.user.id);
       }
-
-    },[])
+    },[session])
 
     const handleSearch = () => {
       const query = (searchQuery || "").trim();
@@ -156,15 +121,24 @@
       }
     };
 
-
-
+    // Show loading state while auth is initializing
+    if (loading) {
+      return (
+        <div className="flex gap-8 md:gap-16 lg:gap-20 flex-col items-center w-full">
+          <div className="w-full h-[200px] sm:h-[250px] md:h-[300px] bg-gray-300 animate-pulse flex items-center justify-center">
+            <div className="text-white text-xl">Loading...</div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       //main div tag
       <div className="flex gap-8 md:gap-16 lg:gap-20 flex-col items-center w-full">
 
-
-        <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2 bg-black"> {/* The black box on top */}
+        <div className={`relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2 ${
+        session ? 'bg-black' : 'bg-blue-600'
+      }`}> {/* The black box on top */}
 
           {/* this is the svg for profile/signup  */}
           <div className="absolute right-[50px] sm:right-[50px] md:right-[100px] top-4">
@@ -208,7 +182,7 @@
                       onClick={async () => {
                         await supabase.auth.signOut();
                         setShowMenu(false);
-                        setSession(null);
+                        setUserRole(null);
                         window.location.reload(); // or use router.push("/") if you want
                       }}
                     >
