@@ -1,6 +1,7 @@
 // Utility functions for session management and mobile compatibility
+import { Session } from '@supabase/supabase-js';
 
-export const getStoredSession = (): any => {
+export const getStoredSession = (): Session | null => {
   if (typeof window === 'undefined') return null;
   
   try {
@@ -24,24 +25,24 @@ export const getStoredSession = (): any => {
     }
     
     return null;
-  } catch (error) {
-    console.warn('Error retrieving stored session:', error);
+  } catch {
+    console.warn('Error retrieving stored session');
     return null;
   }
 };
 
-export const storeSession = (session: any): void => {
+export const storeSession = (session: Session): void => {
   if (typeof window === 'undefined') return;
   
   try {
     // Store in localStorage
     localStorage.setItem('supabase-auth-token', JSON.stringify(session));
-  } catch (error) {
+  } catch {
     try {
       // Fallback to sessionStorage
       sessionStorage.setItem('supabase-auth-token', JSON.stringify(session));
-    } catch (error2) {
-      console.warn('Failed to store session in storage:', error2);
+    } catch {
+      console.warn('Failed to store session in storage');
     }
   }
 };
@@ -54,8 +55,8 @@ export const clearStoredSession = (): void => {
     sessionStorage.removeItem('supabase-auth-token');
     localStorage.removeItem('supabaseSession');
     sessionStorage.removeItem('supabaseSession');
-  } catch (error) {
-    console.warn('Failed to clear session from storage:', error);
+  } catch {
+    console.warn('Failed to clear session from storage');
   }
 };
 
@@ -72,12 +73,12 @@ export const getStorageFallback = (): 'localStorage' | 'sessionStorage' | 'cooki
     localStorage.setItem('test', 'test');
     localStorage.removeItem('test');
     return 'localStorage';
-  } catch (error) {
+  } catch {
     try {
       sessionStorage.setItem('test', 'test');
       sessionStorage.removeItem('test');
       return 'sessionStorage';
-    } catch (error2) {
+    } catch {
       return 'cookies';
     }
   }

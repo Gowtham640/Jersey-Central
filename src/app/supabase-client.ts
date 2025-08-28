@@ -23,7 +23,7 @@ export const supabase = createBrowserClient(
             const cookies = document.cookie.split(';');
             const cookie = cookies.find(c => c.trim().startsWith(`${key}=`));
             return cookie ? cookie.split('=')[1] : null;
-          } catch (error) {
+          } catch {
             // If any storage method fails, try cookies as last resort
             try {
               const cookies = document.cookie.split(';');
@@ -38,16 +38,16 @@ export const supabase = createBrowserClient(
           try {
             // Try localStorage first
             window.localStorage.setItem(key, value);
-          } catch (error) {
+          } catch {
             try {
               // Fallback to sessionStorage
               window.sessionStorage.setItem(key, value);
-            } catch (error2) {
+            } catch {
               // Final fallback to cookies
               try {
                 document.cookie = `${key}=${value}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-              } catch (error3) {
-                console.warn('Failed to persist session data:', error3);
+              } catch {
+                console.warn('Failed to persist session data');
               }
             }
           }
@@ -55,14 +55,14 @@ export const supabase = createBrowserClient(
         removeItem: (key: string) => {
           try {
             window.localStorage.removeItem(key);
-          } catch (error) {
+          } catch {
             try {
               window.sessionStorage.removeItem(key);
-            } catch (error2) {
+            } catch {
               try {
                 document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-              } catch (error3) {
-                console.warn('Failed to remove session data:', error3);
+              } catch {
+                console.warn('Failed to remove session data');
               }
             }
           }
