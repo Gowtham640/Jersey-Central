@@ -41,7 +41,7 @@ export default function SignupPage() {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (isSignUp) {
-            const { error: signUpError } = await supabase.auth.signUp({
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                 email, password, options: {
                     emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/signup`,
                 },
@@ -52,19 +52,58 @@ export default function SignupPage() {
                 return;
             }
             else {
+                // Try to create user in public.users table immediately
+                if (signUpData.user) {
+                    try {
+                        const { error: insertError } = await supabase
+                            .from('users')
+                            .insert({
+                                mail: email,
+                                user_id: signUpData.user.id,
+                                role: 'buyer'
+                            });
+                        
+                        if (insertError) {
+                            console.warn('Could not create user profile yet (will be created on first sign-in):', insertError);
+                        }
+                    } catch (err) {
+                        console.warn('Could not create user profile yet (will be created on first sign-in):', err);
+                    }
+                }
                 toast.success("Check your mail to verify your account", { duration: 2000 });
             }
         }
         else {
-            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
             if (signInError) {
                 console.log(signInError);
                 toast.error("Sign in failed! Please try again.");
                 return;
             }
             else {
+                // Try to create user in public.users table if they don't exist
+                if (signInData.user) {
+                    try {
+                        const { error: insertError } = await supabase
+                            .from('users')
+                            .insert({
+                                mail: email,
+                                user_id: signInData.user.id,
+                                role: 'buyer'
+                            })
+                            .select()
+                            .single();
+                        
+                        if (insertError) {
+                            // User might already exist, which is fine
+                            console.log('User profile already exists or could not be created:', insertError);
+                        }
+                    } catch (err) {
+                        console.log('Could not create user profile:', err);
+                    }
+                }
                 
-                toast.success("Signin successful!", { duration: 2000 });
+                toast.success("Signin successful!", { duration:2000 });
             }
         }
         //toasting
