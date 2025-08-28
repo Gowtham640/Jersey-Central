@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
   if (!token_hash || !type) return redirect("/error");
 
-  const supabase = createServerClientWithCookies();
+  const supabase = await createServerClientWithCookies();
   const { error } = await supabase.auth.verifyOtp({ type, token_hash });
 
   if (error) return redirect("/error");
