@@ -63,15 +63,28 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute && session) {
     // Check user role for protected routes
     try {
-      const { data: userData, error: userError } = await supabase
+      let { data: userData, error: userError } = await supabase
         .from('users')
         .select('role')
         .eq('user_id', session.user.id)
         .single()
 
       if (userError || !userData) {
-        // User not found in database, redirect to home
-        return NextResponse.redirect(new URL('/', request.url))
+        // User not found in public.users table - this is their first sign in
+        // Check if they exist in auth.users
+        const { data: authUser, error: authError } = await supabase.auth.getUser()
+        
+        if (!authError && authUser.user) {
+          // User exists in auth.users but not in public.users - this is their first sign in
+          // Since middleware can't insert with anon key, we'll redirect to a special route
+          // that will handle user creation, then redirect back to the intended route
+          const intendedRoute = request.nextUrl.pathname
+          const redirectUrl = `/auth/create-user?redirect=${encodeURIComponent(intendedRoute)}`
+          return NextResponse.redirect(new URL(redirectUrl, request.url))
+        } else {
+          // User doesn't exist in auth.users either, redirect to home
+          return NextResponse.redirect(new URL('/', request.url))
+        }
       }
 
       const userRole = userData.role
