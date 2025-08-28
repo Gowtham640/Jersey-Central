@@ -282,8 +282,11 @@ export default function AdminProducts() {
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900"
               >
                 <option value="all">All Qualities</option>
-                <option value="Fan Version">Fan Version</option>
                 <option value="First Copy">First Copy</option>
+                <option value="Master Version">Master Version</option>
+                <option value="Embroidery">Embroidery</option>
+                <option value="Printed">Printed</option>
+                <option value="Imported">Imported</option>
               </select>
             </div>
             <div>

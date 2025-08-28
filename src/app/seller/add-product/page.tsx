@@ -244,10 +244,11 @@ export default function AddProduct() {
                   required
                 >
                   <option value="">Select Quality</option>
-                  <option value="Fan Version">Fan Version</option>
                   <option value="First Copy">First Copy</option>
-                  <option value="Replica">Replica</option>
-                  <option value="Original">Original</option>
+                  <option value="Master Version">Master Version</option>
+                  <option value="Embroidery">Embroidery</option>
+                  <option value="Printed">Printed</option>
+                  <option value="Imported">Imported</option>
                 </select>
               </div>
             </div>

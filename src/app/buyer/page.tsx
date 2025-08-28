@@ -159,9 +159,9 @@ function BuyerSearchContent() {
 	return (
 		<div className="min-h-screen bg-gray-50">
 			{/* Header */}
-			<div className="bg-white shadow-sm border-0">
+			<div className="bg-black shadow-sm border-0">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-					<h1 className="text-3xl font-bold text-gray-900">Search Results</h1>
+					<h1 className="text-3xl font-bold text-white">Search Results</h1>
 					<button
 						onClick={() => router.push('/')}
 						className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-colors duration-200"
@@ -200,8 +200,11 @@ function BuyerSearchContent() {
 										className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900"
 									>
 										<option value="all">All Qualities</option>
-										<option value="Fan Version">Fan Version</option>
 										<option value="First Copy">First Copy</option>
+										<option value="Master Version">Master Version</option>
+										<option value="Embroidery">Embroidery</option>
+										<option value="Printed">Printed</option>
+										<option value="Imported">Imported</option>
 									</select>
 								</div>
 								<div className="flex-1 min-w-[200px]">

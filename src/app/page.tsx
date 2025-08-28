@@ -137,9 +137,7 @@
       //main div tag
       <div className="flex gap-8 md:gap-16 lg:gap-20 flex-col items-center w-full">
 
-        <div className={`relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2 ${
-        session ? 'bg-black' : 'bg-blue-600'
-      }`}> {/* The black box on top */}
+        <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] flex justify-center items-center flex-col gap-2 bg-black"> {/* The black box on top */}
 
           {/* this is the svg for profile/signup  */}
           <div className="absolute right-[50px] sm:right-[50px] md:right-[100px] top-4">
