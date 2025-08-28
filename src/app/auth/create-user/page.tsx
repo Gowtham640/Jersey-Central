@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../supabase-client";
 import toast from "react-hot-toast";
 
-export default function CreateUserPage() {
+function CreateUserContent() {
   const [isCreating, setIsCreating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function CreateUserPage() {
         }
 
         // Check if user already exists in public.users
-        const { data: existingUser, error: checkError } = await supabase
+        const { data: existingUser } = await supabase
           .from("users")
           .select("id")
           .eq("user_id", user.id)
@@ -95,4 +95,19 @@ export default function CreateUserPage() {
   }
 
   return null;
+}
+
+export default function CreateUserPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CreateUserContent />
+    </Suspense>
+  );
 }
