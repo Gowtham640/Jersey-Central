@@ -244,7 +244,7 @@
         {homepageSections.map((section) => (
           section.visible && (
             <div key={section.id} className="relative left-0 sm:left-2 md:left-4 bg-white w-full max-w-[1000px] h-auto rounded-md flex flex-col items-center justify-start pt-16 sm:pt-20 md:pt-10 pb-8 mb-8 shadow-lg hover:shadow-2xl px-4 sm:px-6 md:px-8"> 
-              <p className="absolute top-[20px] text-[18px] sm:text-[20px] md:text-[24px] font-sans font-bold text-black">{section.title}</p>
+              <p className="absolute top-[1px] text-[18px] sm:text-[20px] md:text-[24px] font-sans font-bold text-black">{section.title}</p>
               {section.products.length > 0 ? (
                 <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-8 w-full justify-center items-start">
                   {section.products.map((product: HomepageProduct) => (
