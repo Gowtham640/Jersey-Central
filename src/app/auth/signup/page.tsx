@@ -3,6 +3,7 @@ import React, { useState, FormEvent,useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { storeSession, clearStoredSession } from "../../utils/session-utils";
 
 
 export default function SignupPage() {
@@ -18,11 +19,13 @@ export default function SignupPage() {
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
+          async (event, session) => {
             if (session) {
-              localStorage.setItem("supabaseSession", JSON.stringify(session));
+              // Store session using utility function
+              storeSession(session);
             } else {
-              localStorage.removeItem("supabaseSession");
+              // Clear session using utility function
+              clearStoredSession();
             }
           }
         );

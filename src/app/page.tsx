@@ -4,6 +4,7 @@
   import {supabase } from "./supabase-client";
   import { useRouter } from "next/navigation";
   import { useAuth } from "./providers";
+  import { clearStoredSession } from "./utils/session-utils";
   
 
   interface HomepageProduct {
@@ -183,6 +184,7 @@
                         await supabase.auth.signOut();
                         setShowMenu(false);
                         setUserRole(null);
+                        clearStoredSession();
                         window.location.reload(); // or use router.push("/") if you want
                       }}
                     >

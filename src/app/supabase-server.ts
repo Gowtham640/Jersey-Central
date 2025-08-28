@@ -15,9 +15,18 @@ export const createServerClientWithCookies = async () => {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Enhanced cookie options for mobile compatibility
+              const enhancedOptions = {
+                ...options,
+                sameSite: 'lax' as const,
+                secure: process.env.NODE_ENV === 'production',
+                httpOnly: false, // Allow client-side access for Supabase
+                maxAge: 60 * 60 * 24 * 7, // 7 days
+                path: '/',
+              }
+              cookieStore.set(name, value, enhancedOptions)
+            })
           } catch {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing

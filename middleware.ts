@@ -19,9 +19,19 @@ export async function middleware(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Enhanced cookie options for mobile compatibility
+            const enhancedOptions = {
+              ...options,
+              // Ensure cookies work on mobile
+              sameSite: 'lax' as const,
+              secure: process.env.NODE_ENV === 'production',
+              httpOnly: false, // Allow client-side access for Supabase
+              maxAge: 60 * 60 * 24 * 7, // 7 days
+              path: '/',
+            }
+            supabaseResponse.cookies.set(name, value, enhancedOptions)
+          })
         },
       },
     }
