@@ -243,12 +243,12 @@
         {/* Dynamic Homepage Sections */}
         {homepageSections.map((section) => (
           section.visible && (
-            <div key={section.id} className="relative left-0 sm:left-2 md:left-4 bg-white w-full max-w-[1000px] h-auto min-h-[300px] sm:min-h-[400px] md:min-h-[480px] rounded-md flex flex-col sm:flex-row items-center justify-evenly pt-16 sm:pt-20 md:pt-10 mb-8 shadow-lg hover:shadow-2xl px-4 sm:px-6 md:px-8"> 
+            <div key={section.id} className="relative left-0 sm:left-2 md:left-4 bg-white w-full max-w-[1000px] h-auto rounded-md flex flex-col items-center justify-start pt-16 sm:pt-20 md:pt-10 pb-8 mb-8 shadow-lg hover:shadow-2xl px-4 sm:px-6 md:px-8"> 
               <p className="absolute top-[20px] text-[18px] sm:text-[20px] md:text-[24px] font-sans font-bold text-black">{section.title}</p>
               {section.products.length > 0 ? (
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 w-full justify-center items-center">
-                  {section.products.slice(0, 3).map((product: HomepageProduct) => (
-                    <div onClick={() => router.push(`/buyer/${product.jersey_id}`)} key={product.id} className="bg-gray-100 w-full max-w-[250px] h-[250px] sm:h-[280px] md:h-[300px] rounded-md p-3 sm:p-4 cursor-pointer hover:bg-gray-200 transition-colors shadow-md">
+                <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-8 w-full justify-center items-start">
+                  {section.products.map((product: HomepageProduct) => (
+                    <div onClick={() => router.push(`/buyer/${product.jersey_id}`)} key={product.id} className="bg-gray-100 w-full max-w-[250px] h-[250px] sm:h-[280px] md:h-[300px] rounded-md p-3 sm:p-4 cursor-pointer hover:bg-gray-200 transition-colors shadow-md flex-shrink-0">
                       <img 
                         src={getFirstImageUrl(product.jersey?.image_url)} 
                         alt={product.jersey?.title}
