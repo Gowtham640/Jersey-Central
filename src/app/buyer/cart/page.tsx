@@ -223,50 +223,52 @@ export default function Cart() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border-0 p-6">
+            <div className="bg-white rounded-lg shadow-sm border-0 p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Cart Items ({cartItems.length})</h2>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.has(item.id)}
-                      onChange={(e) => {
-                        const newSelected = new Set(selectedItems);
-                        if (e.target.checked) {
-                          newSelected.add(item.id);
-                        } else {
-                          newSelected.delete(item.id);
-                        }
-                        setSelectedItems(newSelected);
-                      }}
-                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    
-                    <img
-                      src={getFirstImageUrl(item.jersey.image_url)}
-                      alt={item.jersey.title}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.jersey.title}</h3>
-                      <p className="text-sm text-gray-600">{item.jersey.club} - {item.jersey.quality}</p>
-                      <p className="text-sm text-gray-600">Size: {item.size}</p>
+                  <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3 w-full sm:w-auto">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.has(item.id)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedItems);
+                          if (e.target.checked) {
+                            newSelected.add(item.id);
+                          } else {
+                            newSelected.delete(item.id);
+                          }
+                          setSelectedItems(newSelected);
+                        }}
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
+                      />
+                      
+                      <img
+                        src={getFirstImageUrl(item.jersey.image_url)}
+                        alt={item.jersey.title}
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                      />
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{item.jersey.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">{item.jersey.club} - {item.jersey.quality}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Size: {item.size}</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 flex-shrink-0">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         className="p-1 rounded-full hover:bg-gray-200"
                       >
                         <MinusIcon className="h-4 w-4" />
                       </button>
-                      <span className="w-8 text-center">{item.quantity}</span>
+                      <span className="w-8 text-center text-sm">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         className="p-1 rounded-full hover:bg-gray-200"
@@ -275,14 +277,14 @@ export default function Cart() {
                       </button>
                     </div>
                     
-                    <div className="text-right">
-                      <p className="font-medium text-gray-900">₹{item.jersey.price * item.quantity}</p>
-                      <p className="text-sm text-gray-600">₹{item.jersey.price} each</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base">₹{item.jersey.price * item.quantity}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">₹{item.jersey.price} each</p>
                     </div>
                     
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 flex-shrink-0"
                     >
                       <TrashIcon className="h-5 w-5" />
                     </button>
@@ -294,17 +296,17 @@ export default function Cart() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border-0 p-6 sticky top-8">
+            <div className="bg-white rounded-lg shadow-sm border-0 p-4 sm:p-6 lg:sticky lg:top-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">₹{subtotal}</span>
+                  <span className="text-gray-600 text-sm sm:text-base">Subtotal:</span>
+                  <span className="font-medium text-sm sm:text-base">₹{subtotal}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping:</span>
-                  <span className="font-medium">Free</span>
+                  <span className="text-gray-600 text-sm sm:text-base">Shipping:</span>
+                  <span className="font-medium text-sm sm:text-base">Free</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between">
@@ -317,12 +319,12 @@ export default function Cart() {
               <button
                 onClick={proceedToCheckout}
                 disabled={selectedItems.size === 0}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
               >
                 Proceed to Checkout ({selectedItems.size} items)
               </button>
               
-              <div className="mt-4 text-sm text-gray-600 text-center">
+              <div className="mt-4 text-xs sm:text-sm text-gray-600 text-center">
                 <p>Selected {selectedItems.size} of {cartItems.length} items</p>
               </div>
             </div>

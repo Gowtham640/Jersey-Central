@@ -129,31 +129,42 @@ export default function AdminDashboard() {
   }, [sellerRequests, fetchQuickStats]);
 
   const handleSellerAction = async (sellerId: number, email: string, action: 'approve' | 'reject') => {
-    const { error: reqError } = await supabase
-      .from('seller_requests')
-      .update({ approval_status: action === 'approve' ? 'approved' : 'rejected' })
-      .eq('id', sellerId);
+    try {
+      // First update the seller request status
+      const { error: reqError } = await supabase
+        .from('seller_requests')
+        .update({ approval_status: action === 'approve' ? 'approved' : 'rejected' })
+        .eq('id', sellerId);
 
-    if (reqError) {
-      console.error('Error updating seller request:', reqError);
-      toast.error(`Failed to ${action} seller`);
-      return;
-    } else {
-      toast.success(`Seller ${action}d successfully`);
+      if (reqError) {
+        console.error('Error updating seller request:', reqError);
+        toast.error(`Failed to ${action} seller`);
+        return;
+      }
+
+      // Then update the user role in public.users table
+      const { error: userError } = await supabase
+        .from('users')
+        .update({ role: action === 'approve' ? 'seller' : 'buyer' })
+        .eq('mail', email);
+
+      if (userError) {
+        console.error('Error updating user role:', userError);
+        toast.error(`Seller ${action}d but role update failed`);
+      } else {
+        toast.success(`Seller ${action}d successfully and role updated to ${action === 'approve' ? 'seller' : 'buyer'}`);
+      }
+
+      // Refresh the data
       fetchSellerRequests();
+      fetchQuickStats();
+    } catch (error) {
+      console.error('Error in handleSellerAction:', error);
+      toast.error(`Failed to ${action} seller`);
+    } finally {
+      setShowSellerModal(false);
+      setSelectedSeller(null);
     }
-
-    const { error: userError } = await supabase
-      .from('users')
-      .update({ role: action === 'approve' ? 'seller' : 'buyer' })
-      .eq('mail', email);
-
-    if (userError) {
-      console.error('Error updating user role:', userError);
-    }
-
-    setShowSellerModal(false);
-    setSelectedSeller(null);
   };
 
   const getapproval_statusColor = (approval_status: string) => {
