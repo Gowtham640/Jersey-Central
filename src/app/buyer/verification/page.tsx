@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -14,7 +14,7 @@ interface OrderData {
   shipping_address: string;
 }
 
-export default function PaymentVerification() {
+function PaymentVerificationContent() {
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -59,8 +59,6 @@ export default function PaymentVerification() {
 
   const generateUPILink = (amount: number) => {
     // Generate UPI link for payment
-    const upiId = 'jerseycentral@paytm'; // Replace with actual UPI ID
-    const merchantName = 'Gowtham Ramakrishna Rayapureddi';
     const transactionNote = `Payment for Order #${orderData?.id}`;
     
     return `upi://pay?pa=grizigowtham@okhdfcbank&pn=Gowtham%20Ramakrishna%20Rayapureddi&aid=uGICAgIDjkPzTJw&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
@@ -153,10 +151,25 @@ export default function PaymentVerification() {
           </button>
 
           <div className="mt-4 text-sm text-gray-600">
-            <p>After completing payment, click "Done" to confirm</p>
+            <p>After completing payment, click &quot;Done&quot; to confirm</p>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentVerification() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading payment details...</p>
+        </div>
+      </div>
+    }>
+      <PaymentVerificationContent />
+    </Suspense>
   );
 }
