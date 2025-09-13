@@ -205,14 +205,9 @@ export default function Checkout() {
       // Clear localStorage
       localStorage.removeItem('checkoutItems');
 
-      // Redirect to Razorpay checkout page if configured
-      const razorpayUrl = process.env.NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL;
-      if (razorpayUrl) {
-        window.location.href = `${razorpayUrl}?order_id=${order.id}`;
-      } else {
-        toast.success('Order created. Redirecting to orders page.');
-        router.push('/buyer/orders');
-      }
+      // Redirect to payment verification page
+      toast.success('Order created. Redirecting to payment verification.');
+      router.push(`/buyer/verification?order_id=${order.id}`);
     } catch (error) {
       console.error('Error in placeOrder:', error);
       toast.error('Failed to place order');

@@ -16,12 +16,11 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  buyer_name: string;
-  buyer_address: string;
-  buyer_phone: string;
-  seller_id: string;
+  user_id: string;
   total_amount: number;
-  order_status: 'pending' | 'confirmed' | 'fulfilled' | 'cancelled';
+  shipping_address: string;
+  status: 'pending' | 'confirmed' | 'fulfilled' | 'cancelled';
+  payment_status: 'pending' | 'confirmed' | 'failed';
   created_at: string;
   order_items: OrderItem[];
 }
@@ -64,29 +63,90 @@ export default function AdminOrders() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      console.log("Updating order status...", { orderId, newStatus });
+  
+      const { data, error, status } = await supabase
         .from('orders')
-        .update({ order_status: newStatus })
-        .eq('id', orderId);
-
+        .update({ status: newStatus })
+        .eq('id', orderId)
+        .select(); // <-- include select to see what got updated
+  
       if (error) {
-        console.error('Error updating order status:', error);
-        toast.error('Failed to update order status');
+        console.error("Supabase update error:", error.message, error.details, error.hint);
+        toast.error(`Failed to update order status: ${error.message}`);
         return;
       }
-
-        setOrders(prev => prev.map(order =>
+  
+      if (!data || data.length === 0) {
+        console.warn("No rows updated. Possibly invalid orderId?", orderId);
+        toast.error("No rows were updated. Check if the orderId exists.");
+        return;
+      }
+  
+      console.log("Update success:", data);
+  
+      setOrders(prev =>
+        prev.map(order =>
           order.id === orderId
-            ? { ...order, order_status: newStatus as 'pending' | 'confirmed' | 'fulfilled' | 'cancelled' }
+            ? { ...order, status: newStatus as 'pending' | 'confirmed' | 'fulfilled' | 'cancelled' }
             : order
-        ));
-
-      toast.success('Order status updated successfully');
-    } catch (error) {
-      console.error('Error in updateOrderStatus:', error);
-      toast.error('Failed to update order status');
+        )
+      );
+  
+      toast.success("Order status updated successfully");
+    } catch (err) {
+      console.error("Unexpected error in updateOrderStatus:", err);
+      toast.error("Unexpected error occurred while updating order status");
     }
   };
+  
+
+  const confirmPayment = async (orderId: string) => {
+    try {
+      console.log("Confirming payment...", { orderId });
+  
+      const { data, error } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'confirmed',
+          status: 'confirmed',
+        })
+        .eq('id', orderId)
+        .select();
+  
+      if (error) {
+        console.error("Supabase payment confirm error:", error.message, error.details, error.hint);
+        toast.error(`Failed to confirm payment: ${error.message}`);
+        return;
+      }
+  
+      if (!data || data.length === 0) {
+        console.warn("No rows updated during confirmPayment. Possibly invalid orderId?", orderId);
+        toast.error("No rows were updated for confirmPayment. Check if the orderId exists.");
+        return;
+      }
+  
+      console.log("Payment confirm success:", data);
+  
+      setOrders(prev =>
+        prev.map(order =>
+          order.id === orderId
+            ? {
+                ...order,
+                payment_status: 'confirmed',
+                status: 'confirmed' as 'pending' | 'confirmed' | 'fulfilled' | 'cancelled',
+              }
+            : order
+        )
+      );
+  
+      toast.success("Payment confirmed successfully");
+    } catch (err) {
+      console.error("Unexpected error in confirmPayment:", err);
+      toast.error("Unexpected error occurred while confirming payment");
+    }
+  };
+  
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -99,13 +159,13 @@ export default function AdminOrders() {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSeller = filterSeller === 'all' || order.seller_id === filterSeller;
-    const matchesStatus = filterStatus === 'all' || order.order_status === filterStatus;
+    const matchesSeller = filterSeller === 'all' || order.user_id === filterSeller;
+    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
 
     return matchesSeller && matchesStatus;
   });
 
-  const uniqueSellers = [...new Set(orders.map(o => o.seller_id))];
+  const uniqueSellers = [...new Set(orders.map(o => o.user_id))];
 
   useEffect(() => {
     fetchOrders();
@@ -158,9 +218,9 @@ export default function AdminOrders() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {orders.filter(o => o.order_status === 'pending').length}
-                </p>
+                 <p className="text-2xl font-semibold text-gray-900">
+                   {orders.filter(o => o.status === 'pending').length}
+                 </p>
               </div>
             </div>
           </div>
@@ -171,9 +231,9 @@ export default function AdminOrders() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Confirmed</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {orders.filter(o => o.order_status === 'confirmed').length}
-                </p>
+                 <p className="text-2xl font-semibold text-gray-900">
+                   {orders.filter(o => o.status === 'confirmed').length}
+                 </p>
               </div>
             </div>
           </div>
@@ -184,9 +244,9 @@ export default function AdminOrders() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Fulfilled</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {orders.filter(o => o.order_status === 'fulfilled').length}
-                </p>
+                 <p className="text-2xl font-semibold text-gray-900">
+                   {orders.filter(o => o.status === 'fulfilled').length}
+                 </p>
               </div>
             </div>
           </div>
@@ -253,6 +313,9 @@ export default function AdminOrders() {
                     Order Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -263,12 +326,12 @@ export default function AdminOrders() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {order.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{order.buyer_name}</div>
-                        <div className="text-sm text-gray-500">{order.buyer_phone}</div>
-                      </div>
-                    </td>
+                     <td className="px-6 py-4 whitespace-nowrap">
+                       <div>
+                         <div className="text-sm font-medium text-gray-900">User #{order.user_id}</div>
+                         <div className="text-sm text-gray-500">Order #{order.id}</div>
+                       </div>
+                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {order.order_items?.map((item, idx) => (
                         <div key={idx} className="mb-1">
@@ -276,32 +339,49 @@ export default function AdminOrders() {
                         </div>
                       ))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.seller_id}
-                    </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                       {order.user_id}
+                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ₹{order.total_amount}
                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap">
+                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                         {order.status}
+                       </span>
+                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.order_status)}`}>
-                        {order.order_status}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.payment_status || 'pending')}`}>
+                        {order.payment_status || 'pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setShowOrderModal(true);
-                        }}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                          className="text-green-600 hover:text-green-700"
+                          title="View Details"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        {order.payment_status === 'pending' && (
+                          <button
+                            onClick={() => confirmPayment(order.id)}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="Confirm Payment"
+                          >
+                            <CheckCircleIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -330,21 +410,21 @@ export default function AdminOrders() {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Buyer Name</label>
-                  <p className="text-sm text-gray-900">{selectedOrder.buyer_name}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="text-sm text-gray-900">{selectedOrder.buyer_phone}</p>
-                </div>
-              </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700">User ID</label>
+                   <p className="text-sm text-gray-900">{selectedOrder.user_id}</p>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700">Order ID</label>
+                   <p className="text-sm text-gray-900">{selectedOrder.id}</p>
+                 </div>
+               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Address</label>
-                <p className="text-sm text-gray-900">{selectedOrder.buyer_address}</p>
-              </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700">Shipping Address</label>
+                 <p className="text-sm text-gray-900">{selectedOrder.shipping_address}</p>
+               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Products</label>
@@ -374,16 +454,16 @@ export default function AdminOrders() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Seller</label>
-                  <p className="text-sm text-gray-900">{selectedOrder.seller_id}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-                  <p className="text-sm text-gray-900">₹{selectedOrder.total_amount}</p>
-                </div>
-              </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700">User ID</label>
+                   <p className="text-sm text-gray-900">{selectedOrder.user_id}</p>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                   <p className="text-sm text-gray-900">₹{selectedOrder.total_amount}</p>
+                 </div>
+               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Order Date</label>
@@ -392,18 +472,36 @@ export default function AdminOrders() {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Order Status</label>
-                <select
-                  value={selectedOrder.order_status}
-                  onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="fulfilled">Fulfilled</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700">Order Status</label>
+                   <select
+                     value={selectedOrder.status}
+                     onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent text-gray-900"
+                   >
+                     <option value="pending">Pending</option>
+                     <option value="confirmed">Confirmed</option>
+                     <option value="fulfilled">Fulfilled</option>
+                     <option value="cancelled">Cancelled</option>
+                   </select>
+                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Status</label>
+                  <div className="mt-1">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedOrder.payment_status || 'pending')}`}>
+                      {selectedOrder.payment_status || 'pending'}
+                    </span>
+                    {selectedOrder.payment_status === 'pending' && (
+                      <button
+                        onClick={() => confirmPayment(selectedOrder.id)}
+                        className="ml-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                      >
+                        Confirm Payment
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
