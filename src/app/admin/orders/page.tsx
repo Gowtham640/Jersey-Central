@@ -65,7 +65,7 @@ export default function AdminOrders() {
     try {
       console.log("Updating order status...", { orderId, newStatus });
   
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId)
