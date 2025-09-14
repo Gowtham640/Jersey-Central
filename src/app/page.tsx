@@ -278,7 +278,7 @@
         <div className="w-full bg-black p-6 sm:p-8 ">
           <div className="text-center mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Need Help?</h2>
-            <p className="text-gray-300 text-sm sm:text-base">We're here to help you find the perfect jersey</p>
+            <p className="text-gray-300 text-sm sm:text-base">We&apos;re here to help you find the perfect jersey</p>
           </div>
           
           <div className="flex justify-center items-center gap-6">
