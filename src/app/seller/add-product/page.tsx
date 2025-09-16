@@ -62,6 +62,21 @@ export default function AddProduct() {
     }));
   };
 
+  const handleSelectAllSizes = (checked: boolean) => {
+    setData(prev => ({
+      ...prev,
+      sizes: Object.keys(prev.sizes).reduce((acc, size) => ({
+        ...acc,
+        [size]: {
+          ...prev.sizes[size as keyof typeof prev.sizes],
+          available: checked
+        }
+      }), {} as Record<string, SizeData>)
+    }));
+  };
+
+  const allSizesSelected = Object.values(data.sizes).every(size => size.available);
+
   const uploadImage=async(files:File[]): Promise<string[]|null>=>{
     const urls:string[]=[];
 
@@ -255,7 +270,18 @@ export default function AddProduct() {
 
             {/* Size and Stock Management */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900">Size & Stock Management</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Size & Stock Management</h2>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={allSizesSelected}
+                    onChange={(e) => handleSelectAllSizes(e.target.checked)}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Select All Sizes</label>
+                </div>
+              </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(data.sizes).map(([size, sizeData]: [string, SizeData]) => (

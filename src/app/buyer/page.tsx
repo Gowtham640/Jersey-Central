@@ -350,3 +350,6 @@ export default function BuyerSearchPage() {
 		</Suspense>
 	);
 }
+
+
+
