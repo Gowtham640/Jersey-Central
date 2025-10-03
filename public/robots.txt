@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Allow all pages for search engines
+Allow: /auth/signup
+Allow: /buyer
+Allow: /buyer/cart
+Allow: /buyer/orders
+Allow: /buyer/checkout
+Allow: /request
+
+# Disallow sensitive/private routes
+Disallow: /auth/create-user
+Disallow: /buyer/verification
+Disallow: /seller/
+Disallow: /admin/
+
+# Block API routes and internal files
+Disallow: /api/
+Disallow: /_next/
+Disallow: /middleware.ts
+
+# Sitemap location
+Sitemap: https://jersey-central.vercel.app/sitemap.xml
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1
