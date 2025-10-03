@@ -24,6 +24,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Jersey Central",
   description: "An online jersey store",
+  verification: {
+    google: "h7G_P0LjYfJbTdab0lcaBbHZXssCIetEaOb8YY0kWM4", 
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -47,7 +50,6 @@ export const metadata: Metadata = {
     "theme-color": "#ffffff",
   },
 };
-
 
 export default function RootLayout({
   children,
